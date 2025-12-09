@@ -88,7 +88,7 @@ Una aplicación completa para optimizar, limpiar y administrar tu sistema Window
 
 ### Última Versión: v0.1.1
 
-**[⬇️ Descargar WassControlSys_v0.1.1.zip](../../releases/latest)**
+**[⬇️ Descargar WassControlSys_v0.1.1.zip](https://github.com/YOUR_USERNAME/WassControlSys/releases/latest/download/WassControlSys_v0.1.1.zip)**
 
 ### Requisitos del Sistema
 - **Sistema Operativo:** Windows 10 (64-bit) o superior
@@ -111,7 +111,7 @@ Una aplicación completa para optimizar, limpiar y administrar tu sistema Window
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/TU_USUARIO/WassControlSys.git
+git clone https://github.com/YOUR_USERNAME/WassControlSys.git
 
 # 2. Navegar al directorio
 cd WassControlSys
@@ -172,12 +172,12 @@ WassControlSys/
 ## 📖 Documentación
 
 ### Guías de Usuario
-- [README de Usuario](publish/README.md) - Guía de inicio rápido
-- [Notas de Versión](publish/RELEASE_NOTES_v0.1.1.md) - Cambios en v0.1.1
+- [README de Usuario](README.md) - Guía de inicio rápido
+- [Notas de Versión](#changelog) - Cambios en v0.1.1
 
 ### Documentación Técnica
-- [Guía de Compilación](BUILD_v0.1.1.md) - Cómo compilar el proyecto
-- [Guía de Distribución](DISTRIBUTION_v0.1.1.md) - Cómo distribuir la aplicación
+<!-- [Guía de Compilación](BUILD_v0.1.1.md) - Cómo compilar el proyecto -->
+<!-- [Guía de Distribución](DISTRIBUTION_v0.1.1.md) - Cómo distribuir la aplicación -->
 
 ### Implementaciones
 Ver la carpeta `implementaciones/` para documentación detallada de cada módulo:
@@ -272,7 +272,7 @@ Si encuentras un bug o tienes una sugerencia:
 - Feedback mejorado en comandos de diagnóstico
 - Arquitectura con Dependency Injection
 
-Ver [RELEASE_NOTES_v0.1.1.md](publish/RELEASE_NOTES_v0.1.1.md) para detalles completos.
+Ver detalles completos en esta sección.
 
 ---
 
