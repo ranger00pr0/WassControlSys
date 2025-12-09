@@ -315,6 +315,8 @@ Este software es propietario. Ver el archivo LICENSE para más detalles.
 [⬆ Volver arriba](#wasscontrolsys)
 
 </div>
-#   W a s s C o n t r o l S y s  
- #   W a s s C o n t r o l S y s  
+#   W a s s C o n t r o l S y s 
+ 
+ #   W a s s C o n t r o l S y s 
+ 
  
