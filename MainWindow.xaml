@@ -1,0 +1,208 @@
+﻿<Window x:Class="WassControlSys.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:WassControlSys.ViewModels"
+        xmlns:core="clr-namespace:WassControlSys.Core"
+        xmlns:views="clr-namespace:WassControlSys.Views"
+        mc:Ignorable="d"
+        Title="WassControlSys" Height="600" Width="1000">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="32" ResizeBorderThickness="4" GlassFrameThickness="0" CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
+
+    <Border Background="{StaticResource WindowBackgroundBrush}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Custom Title Bar -->
+            <Border Grid.Row="0" Background="#1A1A1A" BorderBrush="#333" BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Title -->
+                    <TextBlock Grid.Column="0" Text="WassControlSys" 
+                               VerticalAlignment="Center" 
+                               Margin="15,0,0,0" 
+                               FontSize="13" 
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryBrush}"/>
+
+                    <!-- Window Controls -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
+                        <!-- Minimize Button -->
+                        <Button x:Name="MinimizeButton" 
+                                Content="🗕" 
+                                Width="46" 
+                                Height="32" 
+                                Background="Transparent" 
+                                Foreground="White" 
+                                BorderThickness="0" 
+                                FontSize="16"
+                                Cursor="Hand"
+                                Click="MinimizeButton_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#2A2A2A"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Maximize/Restore Button -->
+                        <Button x:Name="MaximizeButton" 
+                                Content="🗖" 
+                                Width="46" 
+                                Height="32" 
+                                Background="Transparent" 
+                                Foreground="White" 
+                                BorderThickness="0" 
+                                FontSize="16"
+                                Cursor="Hand"
+                                Click="MaximizeButton_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#2A2A2A"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Close Button -->
+                        <Button x:Name="CloseButton" 
+                                Content="✕" 
+                                Width="46" 
+                                Height="32" 
+                                Background="Transparent" 
+                                Foreground="White" 
+                                BorderThickness="0" 
+                                FontSize="16"
+                                Cursor="Hand"
+                                Click="CloseButton_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#E81123"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main Content -->
+            <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar -->
+            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" BorderBrush="#333" BorderThickness="0,0,1,0">
+                <StackPanel Margin="20">
+                    <!-- Logo / Title -->
+                    <TextBlock Text="WassControl" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,30"/>
+
+                    <!-- Navigation -->
+                    <StackPanel>
+                        <Button Content="Dashboard" Command="{Binding NavigateCommand}" CommandParameter="Dashboard" Style="{StaticResource NavButtonStyle}" Foreground="White" Background="#2A2A2A"/>
+                        <Button Content="Limpieza" Command="{Binding NavigateCommand}" CommandParameter="Limpieza" Style="{StaticResource NavButtonStyle}"/>
+                        <Button Content="Optimización" Command="{Binding NavigateCommand}" CommandParameter="Optimizacion" Style="{StaticResource NavButtonStyle}"/>
+                        <Button Content="Diagnóstico" Command="{Binding NavigateCommand}" CommandParameter="Diagnostico" Style="{StaticResource NavButtonStyle}"/>
+                        <Button Content="Sistema" Command="{Binding NavigateCommand}" CommandParameter="Sistema" Style="{StaticResource NavButtonStyle}"/>
+                        <Button Content="Seguridad" Command="{Binding NavigateCommand}" CommandParameter="Seguridad" Style="{StaticResource NavButtonStyle}"/>
+                        <Button Content="Inicio" Command="{Binding NavigateCommand}" CommandParameter="Inicio" Style="{StaticResource NavButtonStyle}"/>
+                        <Button Content="Servicios" Command="{Binding NavigateCommand}" CommandParameter="Servicios" Style="{StaticResource NavButtonStyle}"/>
+                        <Button Content="Desinstalador" Command="{Binding NavigateCommand}" CommandParameter="Desinstalador" Style="{StaticResource NavButtonStyle}"/>
+                    </StackPanel>
+                    
+                    <StackPanel VerticalAlignment="Bottom" Margin="0,50,0,0">
+                         <Button Content="Configuración" Command="{Binding NavigateCommand}" CommandParameter="Configuracion" Style="{StaticResource NavButtonStyle}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Main Content Area -->
+            <Grid Grid.Column="1" Margin="30">
+                
+                <!-- VIEW: DASHBOARD -->
+                <views:DashboardView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Dashboard}"/>
+
+                <!-- VIEW: LIMPIEZA / CLEANING -->
+                <views:CleaningView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Limpieza}"/>
+
+                <!-- VIEW: OPTIMIZACION / OPTIMIZATION -->
+                <views:OptimizationView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Optimizacion}"/>
+
+                <!-- VIEW: DIAGNOSTICO / DIAGNOSTIC -->
+                <views:DiagnosticView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Diagnostico}"/>
+
+                <!-- VIEW: SISTEMA / SYSTEM INFO -->
+                <views:SystemInfoView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Sistema}"/>
+
+                <!-- VIEW: SEGURIDAD / SECURITY -->
+                <views:SecurityView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Seguridad}"/>
+                 
+                <!-- VIEW: CONFIGURACION / SETTINGS -->
+                <views:SettingsView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Configuracion}"/>
+
+                <!-- VIEW: INICIO / STARTUP MANAGER -->
+                <views:StartupManagerView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Inicio}"/>
+
+                <!-- VIEW: SERVICIOS / SERVICE OPTIMIZER -->
+                <views:ServiceOptimizerView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Servicios}"/>
+
+                <!-- VIEW: DESINSTALADOR / BLOATWARE UNINSTALLER -->
+                <views:BloatwareView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Desinstalador}"/>
+
+            </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
