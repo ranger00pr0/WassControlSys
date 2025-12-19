@@ -6,7 +6,7 @@ namespace WassControlSys.Models
     public class ProcessInfoDto
     {
         public int Pid { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public ProcessPriorityClass Priority { get; set; }
         public double WorkingSetMb { get; set; }
         public DateTime? StartTime { get; set; }

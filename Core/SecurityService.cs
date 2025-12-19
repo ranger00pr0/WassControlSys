@@ -7,10 +7,17 @@ namespace WassControlSys.Core
 {
     public class SecurityStatus
     {
-        public string AntivirusName { get; set; } = "Desconocido";
+        public string AntivirusName { get; set; } = "No detectado";
         public bool IsAntivirusEnabled { get; set; } = false;
         public bool IsFirewallEnabled { get; set; } = false;
         public bool IsUacEnabled { get; set; } = false;
+        public bool IsWindowsUpdateEnabled { get; set; } = false; // Added
+        
+        // Friendly properties for UI
+        public string Antivirus => IsAntivirusEnabled ? AntivirusName : "Desactivado o No detectado";
+        public string Firewall => IsFirewallEnabled ? "Activado" : "Desactivado";
+        public string Uac => IsUacEnabled ? "Activado" : "Desactivado";
+        public string WindowsUpdate => IsWindowsUpdateEnabled ? "Al día" : "Atención necesaria";
         
         public string OverallStatus => (IsAntivirusEnabled && IsFirewallEnabled && IsUacEnabled) ? "Seguro" : "Riesgo";
     }
@@ -26,67 +33,95 @@ namespace WassControlSys.Core
                     IsAntivirusEnabled = CheckAntivirus(out string avName),
                     AntivirusName = avName,
                     IsFirewallEnabled = CheckFirewall(),
-                    IsUacEnabled = CheckUac()
+                    IsUacEnabled = CheckUac(),
+                    IsWindowsUpdateEnabled = CheckWindowsUpdate()
                 };
                 return status;
             });
         }
 
+        private bool CheckWindowsUpdate()
+        {
+            try
+            {
+                using var sc = new System.ServiceProcess.ServiceController("wuauserv");
+                return sc.Status == System.ServiceProcess.ServiceControllerStatus.Running || 
+                       sc.Status == System.ServiceProcess.ServiceControllerStatus.StartPending ||
+                       sc.Status == System.ServiceProcess.ServiceControllerStatus.Stopped; // Windows Update service can be stopped but still "enabled"
+                // Actually, if it's not disabled, it's "enabled".
+            }
+            catch { return false; }
+        }
+
         private bool CheckAntivirus(out string name)
         {
             name = "No detectado";
-            bool enabled = false;
             try
             {
-                // Consulta WMI a SecurityCenter2
-                using var searcher = new ManagementObjectSearcher(@"root\SecurityCenter2", "SELECT * FROM AntivirusProduct");
-                foreach (var result in searcher.Get())
+                // WMI query to SecurityCenter2
+                using (var searcher = new ManagementObjectSearcher(@"root\SecurityCenter2", "SELECT * FROM AntivirusProduct"))
                 {
-                    name = result["displayName"]?.ToString() ?? "Desconocido";
-                    
-                    // productState es una máscara de bits. 
-                    // Normalmente, si el bit 12 (0x1000) está activado, está ENCENDIDO. 
-                    // Simplemente verificar si existe es un buen primer paso, pero intentemos analizar el estado.
-                    // Nota: Esto es una simplificación.
-                    string hexState = "";
-                    if (result["productState"] != null)
+                    foreach (var result in searcher.Get())
                     {
-                        int state = Convert.ToInt32(result["productState"]);
-                        // Verificación estándar de "Activado" (heurística)
-                        // 0x1000 = Activado, 0x0000 = Desactivado. 
-                        // Pero diferentes proveedores usan diferentes banderas. 
-                                            // Asumiremos que si se reporta CUALQUIER AV aquí, es probable que sea el activo.
-                                            // Podría ser necesaria una verificación más robusta para proveedores específicos.                        enabled = true; 
-                        hexState = state.ToString("X");
+                        name = result["displayName"]?.ToString() ?? "Desconocido";
+                        
+                        // productState is a bitmask. A state of 266240 (0x41000) is ON. A state of 262144 (0x40000) is OFF.
+                        // The 12th bit (0x1000) often indicates enabled status.
+                        if (result["productState"] != null)
+                        {
+                            if (int.TryParse(result["productState"].ToString(), out int state))
+                            {
+                                // Check if the second byte from the right is 16 (0x10), which means enabled and up to date.
+                                if ((state & 0xFF00) == 0x1000)
+                                {
+                                    return true; // Found an active and up-to-date AV
+                                }
+                            }
+                        }
                     }
-                    
-                    // Simplemente tomar el primero encontrado
-                    break;
                 }
             }
-            catch 
+            catch
             {
-                // Problema de respaldo o de permisos
+                // WMI query might fail on some systems. Silently fail for now.
+                // _log.Warn("Could not query WMI for Antivirus status.", ex);
             }
-            return enabled;
+            return false; // No active AV found
         }
 
         private bool CheckFirewall()
         {
-            // Verificación simple a través del Registro o WMI. 
-            // Usar WMI "root\StandardCimv2" -> MSFT_NetFirewallProfile es más limpio pero requiere versiones más recientes de Windows.
-            // Nos ceñiremos al Registro para una compatibilidad o suposiciones más amplias.
-            // La verificación de perfiles de Dominio, Público, Estándar en el registro es compleja.
-            // Una heurística más simple: Verificar si el servicio 'MpsSvc' (Firewall de Windows) está en ejecución.
             try
             {
-                 using var sc = new System.ServiceProcess.ServiceController("MpsSvc");
-                 return sc.Status == System.ServiceProcess.ServiceControllerStatus.Running;
+                // First, try the modern WMI approach for Firewall status
+                using (var searcher = new ManagementObjectSearcher(@"root\SecurityCenter2", "SELECT * FROM FirewallProduct"))
+                {
+                    foreach (var result in searcher.Get())
+                    {
+                        if (result["productState"] != null)
+                        {
+                             if (int.TryParse(result["productState"].ToString(), out int state))
+                            {
+                                if ((state & 0xFF00) == 0x1000)
+                                {
+                                    return true; // Found an active Firewall
+                                }
+                            }
+                        }
+                    }
+                }
             }
             catch
             {
-                return false;
+                // Fallback for older systems or if WMI fails: check the service status.
+                try
+                {
+                     using var sc = new System.ServiceProcess.ServiceController("MpsSvc"); // Windows Defender Firewall service
+                     return sc.Status == System.ServiceProcess.ServiceControllerStatus.Running;
+                }
+                catch { /* Service check also failed */ }
             }
+            return false;
         }
 
         private bool CheckUac()

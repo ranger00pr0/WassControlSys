@@ -5,6 +5,30 @@ Todas las mejoras notables de este proyecto serán documentadas en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.1.1] - 2025-12-18
+
+### Añadido
+
+- **Sistema de Temas Dinámico**: Implementación completa de Modos Claro y Oscuro con persistencia de configuración.
+- **Acceso Directo al Menú**: Sección de "Inicio Principal" rediseñada para mayor claridad.
+- **Mejoras en Aplicaciones (Winget)**:
+  - Añadido botón de cancelación de búsqueda.
+  - Indicador de progreso local y estado de búsqueda en tiempo real.
+- **Diseño de Botones Estándar**: Nueva paleta de estilos para botones de acción (`Primary`, `Secondary`, `Danger`).
+- **Tooltips Informativos**: Añadidos en toda la sección de Mantenimiento para explicar cada función de reparación (SFC, DISM, CHKDSK).
+
+### Cambiado
+
+- **Refactorización de Interfaz**: Eliminación de colores fijos para total compatibilidad con temas dinámicos.
+- **Optimización de Rendimiento de UI**: Habilitada la virtualización en todas las listas largas para mayor fluidez.
+- **Flujo de Inicio**: El modo de rendimiento por defecto ahora se establece correctamente en "General" antes de cargar la configuración del usuario.
+
+### Corregido
+
+- Corregida visibilidad de texto en diversas secciones (Hardware, Rendimiento, Aplicaciones) al usar temas oscuros.
+- Eliminados parpadeos visuales al cambiar entre secciones del menú.
+- Corregido error en el ViewModel que impedía la correcta actualización de la lista de apps.
+
 ## [0.2.0] - 2025-12-16
 
 ### Añadido

@@ -9,9 +9,9 @@
         <TextBlock Text="{DynamicResource Settings_Title}" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,30"/>
 
         <!-- General Settings -->
-        <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="25" Margin="0,0,0,20">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="25" Margin="0,0,0,20">
             <StackPanel>
-                <TextBlock Text="{DynamicResource Settings_General}" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
+                <TextBlock Text="{DynamicResource Settings_General}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,20"/>
                 
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -19,25 +19,33 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="{DynamicResource Settings_RunOnStartup}" Foreground="White" FontSize="15" Margin="0,0,0,5"/>
-                        <TextBlock Text="{DynamicResource Settings_RunOnStartup_Desc}" Foreground="#888" FontSize="13"/>
+                        <TextBlock Text="{DynamicResource Settings_RunOnStartup}" Foreground="{DynamicResource TextBrush}" FontSize="15" Margin="0,0,0,5"/>
+                        <TextBlock Text="{DynamicResource Settings_RunOnStartup_Desc}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="13"/>
                     </StackPanel>
 
-                    <!-- Un CheckBox simple diseñado como interruptor podría ser complejo, usando un CheckBox estándar por ahora -->
-                    <CheckBox Grid.Column="1" IsChecked="{Binding RunOnStartup}" VerticalAlignment="Center">
-                        <CheckBox.LayoutTransform>
-                            <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
-                        </CheckBox.LayoutTransform>
-                    </CheckBox>
+                    <ToggleButton Grid.Column="1" IsChecked="{Binding RunOnStartup}" VerticalAlignment="Center" Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
             </StackPanel>
         </Border>
 
         <!-- Personalization -->
-        <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="25">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="25">
             <StackPanel>
-                <TextBlock Text="{DynamicResource Settings_Personalization}" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
-                <TextBlock Text="{DynamicResource Settings_AccentColor}" Foreground="White" FontSize="15" Margin="0,0,0,15"/>
+                <TextBlock Text="{DynamicResource Settings_Personalization}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,20"/>
+                
+                <Grid Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Settings_DarkMode}" Foreground="{DynamicResource TextBrush}" FontSize="15" Margin="0,0,0,5"/>
+                        <TextBlock Text="{DynamicResource Settings_DarkMode_Desc}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="13"/>
+                    </StackPanel>
+                    <ToggleButton Grid.Column="1" IsChecked="{Binding IsDarkMode}" VerticalAlignment="Center" Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+
+                <TextBlock Text="{DynamicResource Settings_AccentColor}" Foreground="{DynamicResource TextBrush}" FontSize="15" Margin="0,0,0,15"/>
                 
                 <StackPanel Orientation="Horizontal">
                     <!-- Blue (Default) -->
@@ -97,7 +105,7 @@
                 </StackPanel>
 
                 <!-- Language -->
-                <TextBlock Text="{DynamicResource Settings_Language}" Foreground="White" FontSize="15" Margin="0,20,0,10"/>
+                <TextBlock Text="{DynamicResource Settings_Language}" Foreground="{DynamicResource TextBrush}" FontSize="15" Margin="0,20,0,10"/>
                 <ComboBox SelectedValue="{Binding SelectedLanguage}" SelectedValuePath="Tag" Width="200">
                     <ComboBoxItem Content="{DynamicResource Language_Spanish}" Tag="es"/>
                     <ComboBoxItem Content="{DynamicResource Language_English}" Tag="en"/>

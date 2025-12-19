@@ -1,0 +1,142 @@
+<UserControl x:Class="WassControlSys.Views.HardwareView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="800">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Hardware y Privacidad" Style="{StaticResource HeaderTextStyle}"/>
+
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
+            <!-- Información -->
+            <TabItem Header="Información General">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto" MinWidth="250"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <ScrollViewer Grid.Column="0">
+                            <StackPanel>
+                                <TextBlock Text="Especificaciones Técnicas" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding SystemInformation.GeneralItems}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Key}" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                                <TextBlock Text="{Binding Value}" Grid.Column="1" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                
+                                <Button Content="Exportar Backup de Drivers" Command="{Binding ExportDriversCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,20,0,0" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Panel Lateral de Seguridad -->
+                        <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource SecondaryTextBrush}" BorderThickness="1" CornerRadius="12" Padding="15" Margin="15,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Seguridad" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                                <TextBlock Text="Antivirus:" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0"/>
+                                <TextBlock Text="{Binding SecurityStatus.Antivirus}" Foreground="{DynamicResource TextBrush}" FontWeight="Bold"/>
+                                <Separator Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="0,10"/>
+                                <TextBlock Text="Firewall:" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0"/>
+                                <TextBlock Text="{Binding SecurityStatus.Firewall}" Foreground="{DynamicResource TextBrush}" FontWeight="Bold"/>
+                                <Separator Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="0,10"/>
+                                <TextBlock Text="Windows Update:" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0"/>
+                                <TextBlock Text="{Binding SecurityStatus.WindowsUpdate}" Foreground="{DynamicResource TextBrush}" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- Discos -->
+            <TabItem Header="Estado de Discos">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Listado de salud -->
+                         <DataGrid Grid.Row="0" ItemsSource="{Binding DiskHealth}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" Height="150" Margin="0,0,0,20"
+                                   VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Disco" Binding="{Binding DeviceId}" Width="*"/>
+                                <DataGridTextColumn Header="Modelo" Binding="{Binding Model}" Width="*"/>
+                                <DataGridTextColumn Header="SMART" Binding="{Binding SmartOk}" Width="80"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Grid.Row="1" Text="Analizador de Espacio" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Border Grid.Row="1" Margin="0,30,0,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Button Content="Analizar C:\" Command="{Binding AnalyzeDiskSpaceCommand}" CommandParameter="C:\" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" Margin="0,0,0,10"/>
+                                <ListBox Grid.Row="1" ItemsSource="{Binding DiskAnalysisResult}" Background="Transparent" BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Width="500" Margin="0,5">
+                                                <StackPanel>
+                                                     <Grid>
+                                                        <TextBlock Text="{Binding Path}" Foreground="{DynamicResource TextBrush}"/>
+                                                        <TextBlock Text="{Binding FormattedSize}" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Right"/>
+                                                    </Grid>
+                                                    <ProgressBar Value="{Binding Percentage}" Maximum="100" Height="4" Margin="0,4,0,0" Background="{DynamicResource WindowBackgroundBrush}" BorderThickness="0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- Privacidad -->
+            <TabItem Header="Privacidad">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding PrivacySettings}">
+                            <ItemsControl.ItemTemplate>
+                                 <DataTemplate>
+                                    <Border BorderBrush="{DynamicResource SecondaryTextBrush}" Opacity="0.2" BorderThickness="0,0,0,1" Padding="10">
+                                        <Grid>
+                                            <StackPanel Margin="0,0,100,0">
+                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Description}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <ToggleButton HorizontalAlignment="Right" VerticalAlignment="Center" 
+                                                          IsChecked="{Binding IsEnabled}"
+                                                          Command="{Binding DataContext.UpdatePrivacySettingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          CommandParameter="{Binding}"
+                                                          Style="{StaticResource ToggleSwitchStyle}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

@@ -92,5 +92,14 @@
                 </Grid>
              </StackPanel>
         </Border>
+
+        <TextBlock Text="Herramientas de Backup" Style="{StaticResource HeaderTextStyle}" FontSize="18" Margin="0,30,0,15"/>
+        <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" HorizontalAlignment="Left" MinWidth="500">
+            <StackPanel>
+                <TextBlock Text="Copia de Seguridad de Controladores" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,5"/>
+                <TextBlock Text="Exporta todos los controladores de terceros instalados a una carpeta en el Escritorio. Útil para reinstalaciones de Windows." Foreground="#888" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                <Button Content="Exportar Controladores" Command="{Binding ExportDriversCommand}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left"/>
+            </StackPanel>
+        </Border>
     </StackPanel>
 </UserControl>

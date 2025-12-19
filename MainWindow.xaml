@@ -138,78 +138,40 @@
 
             <!-- Main Content -->
             <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="220"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="220"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-            <!-- Barra lateral -->
-            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" BorderBrush="#333" BorderThickness="0,0,1,0">
-                <StackPanel Margin="20">
-                    <!-- Logo / Título -->
-                    <TextBlock Text="WassControl" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,30"/>
+                <!-- Barra lateral -->
+                <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" BorderBrush="#333" BorderThickness="0,0,1,0">
+                    <StackPanel Margin="20">
+                        <!-- Logo / Título -->
+                        <TextBlock Text="WassControl" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,30"/>
 
-                    <!-- Navegación -->
-                    <StackPanel>
-                        <Button Content="Dashboard" Command="{Binding NavigateCommand}" CommandParameter="Dashboard" Style="{StaticResource NavButtonStyle}" Foreground="White" Background="#2A2A2A"/>
-                        <Button Content="Limpieza" Command="{Binding NavigateCommand}" CommandParameter="Limpieza" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Optimización" Command="{Binding NavigateCommand}" CommandParameter="Optimizacion" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Diagnóstico" Command="{Binding NavigateCommand}" CommandParameter="Diagnostico" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Sistema" Command="{Binding NavigateCommand}" CommandParameter="Sistema" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Seguridad" Command="{Binding NavigateCommand}" CommandParameter="Seguridad" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Inicio" Command="{Binding NavigateCommand}" CommandParameter="Inicio" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Servicios" Command="{Binding NavigateCommand}" CommandParameter="Servicios" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Desinstalador" Command="{Binding NavigateCommand}" CommandParameter="Desinstalador" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Procesos" Command="{Binding NavigateCommand}" CommandParameter="Procesos" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Térmico" Command="{Binding NavigateCommand}" CommandParameter="Termico" Style="{StaticResource NavButtonStyle}"/>
-                        <Button Content="Discos" Command="{Binding NavigateCommand}" CommandParameter="Discos" Style="{StaticResource NavButtonStyle}"/>
+                        <!-- Navegación -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <Button Content="Inicio Principal" Command="{Binding NavigateCommand}" CommandParameter="Dashboard" Style="{StaticResource NavButtonStyle}"/>
+                                <Button Content="Mantenimiento" Command="{Binding NavigateCommand}" CommandParameter="Mantenimiento" Style="{StaticResource NavButtonStyle}"/>
+                                <Button Content="Rendimiento" Command="{Binding NavigateCommand}" CommandParameter="Rendimiento" Style="{StaticResource NavButtonStyle}"/>
+                                <Button Content="Aplicaciones" Command="{Binding NavigateCommand}" CommandParameter="Aplicaciones" Style="{StaticResource NavButtonStyle}"/>
+                                <Button Content="Hardware" Command="{Binding NavigateCommand}" CommandParameter="Hardware" Style="{StaticResource NavButtonStyle}"/>
+                                <Button Content="Configuración" Command="{Binding NavigateCommand}" CommandParameter="Configuracion" Style="{StaticResource NavButtonStyle}" Margin="0,20,0,0"/>
+                            </StackPanel>
+                        </ScrollViewer>
                     </StackPanel>
-                    
-                    <StackPanel VerticalAlignment="Bottom" Margin="0,50,0,0">
-                         <Button Content="Configuración" Command="{Binding NavigateCommand}" CommandParameter="Configuracion" Style="{StaticResource NavButtonStyle}"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
+                </Border>
 
-            <!-- Área de contenido principal -->
-            <Grid Grid.Column="1" Margin="30">
-                
-                <!-- VISTA: DASHBOARD -->
-                <views:DashboardView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Dashboard}"/>
-
-                <!-- VISTA: LIMPIEZA -->
-                <views:CleaningView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Limpieza}"/>
-
-                <!-- VISTA: OPTIMIZACIÓN -->
-                <views:OptimizationView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Optimizacion}"/>
-
-                <!-- VISTA: DIAGNÓSTICO -->
-                <views:DiagnosticView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Diagnostico}"/>
-
-                <!-- VISTA: SISTEMA -->
-                <views:SystemInfoView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Sistema}"/>
-
-                <!-- VISTA: SEGURIDAD -->
-                <views:SecurityView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Seguridad}"/>
-                 
-                <!-- VISTA: CONFIGURACIÓN -->
-                <views:SettingsView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Configuracion}"/>
-
-                <!-- VISTA: INICIO -->
-                <views:StartupManagerView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Inicio}"/>
-
-                <!-- VISTA: SERVICIOS -->
-                <views:ServiceOptimizerView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Servicios}"/>
-
-                <!-- VISTA: DESINSTALADOR -->
-                <views:BloatwareView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Desinstalador}"/>
-                
-                <!-- VISTA: PROCESOS -->
-                <views:ProcessManagerView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Procesos}"/>
-                <views:ThermalMonitorView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Termico}"/>
-                <views:DiskHealthView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Discos}"/>
-
-            </Grid>
+                <!-- Área de contenido principal -->
+                <Grid Grid.Column="1" Margin="30">
+                    <views:DashboardView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Dashboard}"/>
+                    <views:MantenimientoView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Mantenimiento}"/>
+                    <views:RendimientoView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Rendimiento}"/>
+                    <views:AplicacionesView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Aplicaciones}"/>
+                    <views:HardwareView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Hardware}"/>
+                    <views:SettingsView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Configuracion}"/>
+                </Grid>
             </Grid>
 
             <!-- Busy Overlay -->

@@ -17,6 +17,22 @@ namespace WassControlSys.Core
         public string BiosVersion { get; set; } = "";
         public string NetworkInfo { get; set; } = "";
         public string Uptime { get; set; } = "";
+
+        public System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> GeneralItems
+        {
+            get
+            {
+                yield return new System.Collections.Generic.KeyValuePair<string, string>("Equipo", MachineName);
+                yield return new System.Collections.Generic.KeyValuePair<string, string>("S.O.", OsVersion);
+                yield return new System.Collections.Generic.KeyValuePair<string, string>("Procesador", Processor);
+                yield return new System.Collections.Generic.KeyValuePair<string, string>("Memoria RAM", TotalRam);
+                yield return new System.Collections.Generic.KeyValuePair<string, string>("Gráficos", Gpu);
+                yield return new System.Collections.Generic.KeyValuePair<string, string>("Disco", SystemDisk);
+                yield return new System.Collections.Generic.KeyValuePair<string, string>("BIOS", BiosVersion);
+                yield return new System.Collections.Generic.KeyValuePair<string, string>("Red", NetworkInfo);
+                yield return new System.Collections.Generic.KeyValuePair<string, string>("Tiempo Activo", Uptime);
+            }
+        }
     }
 
     public class SystemInfoService : ISystemInfoService
@@ -108,9 +124,9 @@ namespace WassControlSys.Core
                 using var searcher = new ManagementObjectSearcher("SELECT SMBIOSBIOSVersion, Manufacturer FROM Win32_BIOS");
                 foreach (var item in searcher.Get())
                 {
-                    string ver = item["SMBIOSBIOSVersion"]?.ToString();
-                    string man = item["Manufacturer"]?.ToString();
-                    return $"{man} {ver}";
+                    string ver = item["SMBIOSBIOSVersion"]?.ToString() ?? "";
+                    string man = item["Manufacturer"]?.ToString() ?? "";
+                    return $"{man} {ver}".Trim();
                 }
             }
             catch { }

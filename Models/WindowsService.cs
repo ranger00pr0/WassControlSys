@@ -2,14 +2,14 @@ namespace WassControlSys.Models
 {
     public class WindowsService
     {
-        public string Name { get; set; }
-        public string DisplayName { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public ServiceStatus Status { get; set; }
         public ServiceStartType StartType { get; set; }
         public bool CanBeStopped { get; set; }
         public bool CanBePaused { get; set; }
-        public string RecommendedAction { get; set; } // por ejemplo, "Mantener Automático", "Establecer en Manual", "Deshabilitar"
+        public string RecommendedAction { get; set; } = string.Empty; // por ejemplo, "Mantener Automático", "Establecer en Manual", "Deshabilitar"
     }
 
     public enum ServiceStatus

@@ -1,0 +1,59 @@
+<UserControl x:Class="WassControlSys.Views.MantenimientoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="10">
+            <TextBlock Text="Mantenimiento del Sistema" Style="{StaticResource HeaderTextStyle}"/>
+            
+            <UniformGrid Columns="2" Margin="0,0,0,20">
+                <!-- Limpieza -->
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="5">
+                    <StackPanel>
+                        <TextBlock Text="Limpieza" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,10"/>
+                        <Button Content="Limpiar Temporales" Command="{Binding CleanTempFilesCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,0,5"
+                                ToolTip="Elimina archivos temporales del sistema, papelera y caché del navegador para liberar espacio."/>
+                        <Button Content="Limpiar Prefetch" Command="{Binding CleanPrefetchCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,0,5"
+                                ToolTip="Borra los datos de pre-lectura de aplicaciones. Útil si alguna app no abre correctamente."/>
+                        <Button Content="Limpiar DNS" Command="{Binding FlushDnsCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                                ToolTip="Vacía la caché de resolución DNS. Ayuda a solucionar problemas de conexión a internet."/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Optimización -->
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="5">
+                    <StackPanel>
+                        <TextBlock Text="Optimización" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,10"/>
+                        <Button Content="Optimizar RAM" Command="{Binding OptimizeRamCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,0,5"
+                                ToolTip="Libera memoria RAM cerrando procesos innecesarios y vaciando el working set."/>
+                        <Button Content="Reconstruir Índice" Command="{Binding RebuildSearchIndexCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,0,5"
+                                ToolTip="Repara el buscador de Windows reconstruyendo su base de datos de archivos."/>
+                        <Button Content="Reiniciar Red" Command="{Binding ResetNetworkCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                                ToolTip="Restablece los adaptadores de red a su estado original. Requiere reinicio."/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Reparación y Diagnóstico -->
+            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="5">
+                <StackPanel>
+                    <TextBlock Text="Reparación de Archivos y Diagnóstico" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+                    <WrapPanel>
+                        <Button Content="Ejecutar SFC (Scan)" Command="{Binding RunSfcCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,10" Width="180"
+                                ToolTip="Analiza y repara archivos corruptos del sistema de Windows."/>
+                        <Button Content="Ejecutar DISM (Reparar)" Command="{Binding RunDismCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,10" Width="180"
+                                ToolTip="Repara la imagen de Windows usando los archivos originales de Microsoft."/>
+                        <Button Content="Ejecutar CHKDSK" Command="{Binding RunChkdskCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,10" Width="180"
+                                ToolTip="Busca y corrige errores lógicos en el sistema de archivos del disco."/>
+                        <Button Content="Analizar Errores Disco" Command="{Binding AnalyzeDiskCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,10" Width="180"
+                                ToolTip="Inicia un análisis SMART para verificar la salud física de sus unidades."/>
+                    </WrapPanel>
+                    <TextBlock Text="Estas herramientas requieren permisos de administrador y pueden tardar varios minutos." Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" FontStyle="Italic"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

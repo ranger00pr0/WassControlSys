@@ -37,20 +37,20 @@ namespace WassControlSys.Core
                 {
                     foreach (var uninstallPath in uninstallPaths)
                     {
-                        using (RegistryKey baseKey = rootKey.OpenSubKey(uninstallPath))
+                        using (var baseKey = rootKey.OpenSubKey(uninstallPath))
                         {
                             if (baseKey == null) continue;
 
                             foreach (string subKeyName in baseKey.GetSubKeyNames())
                             {
-                                using (RegistryKey subKey = baseKey.OpenSubKey(subKeyName))
+                                using (var subKey = baseKey.OpenSubKey(subKeyName))
                                 {
                                     if (subKey == null) continue;
 
-                                    var appName = subKey.GetValue("DisplayName")?.ToString();
-                                    var publisher = subKey.GetValue("Publisher")?.ToString();
-                                    var installLocation = subKey.GetValue("InstallLocation")?.ToString();
-                                    var uninstallString = subKey.GetValue("UninstallString")?.ToString();
+                                    var appName = (subKey.GetValue("DisplayName") as string) ?? string.Empty;
+                                    var publisher = (subKey.GetValue("Publisher") as string) ?? string.Empty;
+                                    var installLocation = (subKey.GetValue("InstallLocation") as string) ?? string.Empty;
+                                    var uninstallString = (subKey.GetValue("UninstallString") as string) ?? string.Empty;
 
                                     if (!string.IsNullOrEmpty(appName) && !string.IsNullOrEmpty(uninstallString))
                                     {
@@ -101,38 +101,33 @@ namespace WassControlSys.Core
             {
                 _log.Info($"Attempting to uninstall bloatware app: {app.Name} with command: {app.UninstallCommand}");
                 
-                // Los comandos de desinstalación pueden variar mucho (msiexec, setup.exe, EXEs personalizados)
-                // Este es un intento básico para manejar casos comunes.
-                // Podría ser necesario un análisis y ejecución más robustos.
                 ProcessStartInfo psi;
-                if (app.UninstallCommand.StartsWith("MsiExec.exe", StringComparison.OrdinalIgnoreCase))
-                {
-                    psi = new ProcessStartInfo("msiexec.exe", app.UninstallCommand.Replace("MsiExec.exe", "").Trim())
-                    {
-                        UseShellExecute = true,
-                        Verb = "runas" // Solicitar elevación de UAC
-                    };
-                }
-                else
-                {
-                    // Intentar parsear el comando y los argumentos
-                    string command = app.UninstallCommand;
-                    string arguments = "";
+                string command = app.UninstallCommand.Trim();
+                string arguments = "";
 
-                    if (command.Contains(" "))
+                // Handle quotes in the command path
+                if (command.StartsWith("\""))
+                {
+                    int endQuoteIndex = command.IndexOf('"', 1);
+                    if (endQuoteIndex > 0)
                     {
-                        arguments = command.Substring(command.IndexOf(" ") + 1);
-                        command = command.Substring(0, command.IndexOf(" "));
+                        arguments = command.Substring(endQuoteIndex + 1).Trim();
+                        command = command.Substring(1, endQuoteIndex - 1);
                     }
-
-                    psi = new ProcessStartInfo(command, arguments)
-                    {
-                        UseShellExecute = true,
-                        Verb = "runas" // Solicitar elevación de UAC
-                    };
+                }
+                else if (command.Contains(" "))
+                {
+                    arguments = command.Substring(command.IndexOf(" ") + 1).Trim();
+                    command = command.Substring(0, command.IndexOf(" ")).Trim();
                 }
 
-                using (Process process = Process.Start(psi))
+                psi = new ProcessStartInfo(command, arguments)
+                {
+                    UseShellExecute = true,
+                    Verb = "runas" // Request UAC elevation
+                };
+                
+                using (var process = Process.Start(psi))
                 {
                     if (process == null)
                     {
@@ -140,25 +135,33 @@ namespace WassControlSys.Core
                         await _dialogService.ShowMessage($"No se pudo iniciar el proceso de desinstalación para '{app.Name}'.", "Error de Desinstalación");
                         return false;
                     }
-                    await Task.Run(() => process.WaitForExit()); // Esperar a que el proceso de desinstalación se complete
+                    await Task.Run(() => process.WaitForExit());
                     _log.Info($"Uninstall process for {app.Name} exited with code {process.ExitCode}");
                     
-                    if (process.ExitCode == 0) // Típicamente 0 significa éxito
+                    // A common success code is 0. Some uninstallers might use other codes.
+                    // For now, we'll consider 0 as the main success indicator.
+                    if (process.ExitCode == 0)
                     {
-                         await _dialogService.ShowMessage($"'{app.Name}' desinstalado correctamente. Es posible que necesite reiniciar el sistema.", "Desinstalación Completa");
+                         await _dialogService.ShowMessage($"'{app.Name}' parece haberse desinstalado. Algunos cambios pueden requerir un reinicio.", "Desinstalación Finalizada");
                         return true;
                     }
                     else
                     {
-                         await _dialogService.ShowMessage($"La desinstalación de '{app.Name}' falló con código {process.ExitCode}.", "Error de Desinstalación");
+                         await _dialogService.ShowMessage($"El desinstalador de '{app.Name}' finalizó con el código {process.ExitCode}. Es posible que no se haya desinstalado correctamente.", "Proceso Finalizado");
                         return false;
                     }
                 }
             }
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) // ERROR_CANCELLED
+            {
+                // User cancelled the UAC prompt. This is not an error.
+                _log.Warn($"UAC prompt was cancelled by the user for app: {app.Name}");
+                return false;
+            }
             catch (Exception ex)
             {
                 _log.Error($"Error uninstalling bloatware app {app.Name}", ex);
-                await _dialogService.ShowMessage($"Error al desinstalar '{app.Name}': {ex.Message}", "Error de Desinstalación");
+                await _dialogService.ShowMessage($"Error al intentar desinstalar '{app.Name}': {ex.Message}", "Error Crítico de Desinstalación");
                 return false;
             }
         }

@@ -10,7 +10,7 @@ namespace WassControlSys.Core
 
         public async Task SetLanguageAsync(string language)
         {
-            await Task.Run(() =>
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 try
                 {

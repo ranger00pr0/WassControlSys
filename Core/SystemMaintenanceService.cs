@@ -16,7 +16,7 @@ namespace WassControlSys.Core
         private static extern int EmptyWorkingSet(IntPtr hwProc);
 
         [DllImport("shell32.dll")]
-        static extern int SHEmptyRecycleBin(IntPtr hwnd, string pszRootPath, RecycleFlags dwFlags);
+        static extern int SHEmptyRecycleBin(IntPtr hwnd, string? pszRootPath, RecycleFlags dwFlags);
 
         [Flags]
         enum RecycleFlags : int
@@ -71,7 +71,7 @@ namespace WassControlSys.Core
                 }
 
                 // También intentar directorios temporales recientes por usuario bajo perfiles de usuario
-                var usersDir = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory)!, "Users");
+                var usersDir = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\", "Users");
                 if (Directory.Exists(usersDir))
                 {
                     foreach (var user in Directory.GetDirectories(usersDir))
@@ -263,7 +263,11 @@ namespace WassControlSys.Core
 
         public ProcessLaunchResult AnalyzeDisk()
         {
-            string sysDrive = Path.GetPathRoot(Environment.SystemDirectory)!;
+            string? sysDrive = Path.GetPathRoot(Environment.SystemDirectory);
+            if (string.IsNullOrEmpty(sysDrive))
+            {
+                return new ProcessLaunchResult { Started = false, Message = "No se pudo determinar la unidad del sistema." };
+            }
             // /A = Analizar, /V = Verbose
             return LaunchElevated("cmd.exe", $"/c defrag {sysDrive.TrimEnd('\\')} /A /V");
         }
@@ -343,57 +347,77 @@ namespace WassControlSys.Core
         public ProcessLaunchResult LaunchCHKDSK()
         {
             // Programar chkdsk en el próximo arranque para la unidad del sistema
-            string sysDrive = Path.GetPathRoot(Environment.SystemDirectory)!;
+            string? sysDrive = Path.GetPathRoot(Environment.SystemDirectory);
+            if (string.IsNullOrEmpty(sysDrive))
+            {
+                return new ProcessLaunchResult { Started = false, Message = "No se pudo determinar la unidad del sistema." };
+            }
             return LaunchElevated("cmd.exe", $"/c chkdsk {sysDrive.TrimEnd('\\')} /F /R");
         }
 
         private ProcessLaunchResult LaunchElevated(string fileName, string arguments)
         {
-            // Nota: La redirección de flujos requiere UseShellExecute = false.
-            // Esto significa que 'Verb = "runas"' no funcionará directamente para elevar.
-            // Para comandos que requieren elevación con captura de salida, se necesitaría un enfoque diferente (por ejemplo,
-            // lanzar powershell con Start-Process -Verb RunAs y luego capturar su salida)
-            // o asegurar que la aplicación principal ya esté elevada.
-            // Por ahora, capturamos la salida sin elevación automática a través de 'runas'.
-            // Comandos como SFC/DISM seguirán requiriendo que el usuario inicie la aplicación como administrador.
-
-            Process p = null;
+            Process? p = null;
             string standardOutput = string.Empty;
             string standardError = string.Empty;
             int? exitCode = null;
-
             try
             {
-                var psi = new ProcessStartInfo
+                if (IsAdministrator())
                 {
-                    FileName = fileName,
-                    Arguments = arguments,
-                    UseShellExecute = false, // Required to redirect streams
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true, // No mostrar ventana de comandos
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
-
-                p = Process.Start(psi);
-                if (p == null)
-                {
-                    return new ProcessLaunchResult { Started = false, Message = "No se pudo iniciar el proceso." };
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = fileName,
+                        Arguments = arguments,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    p = Process.Start(psi);
+                    if (p == null) return new ProcessLaunchResult { Started = false, Message = "No se pudo iniciar el proceso." };
+                    standardOutput = p.StandardOutput.ReadToEnd();
+                    standardError = p.StandardError.ReadToEnd();
+                    p.WaitForExit();
+                    exitCode = p.ExitCode;
+                    return new ProcessLaunchResult
+                    {
+                        Started = true,
+                        ExitCode = exitCode,
+                        Message = $"Proceso completado. Código de salida: {exitCode}.",
+                        StandardOutput = standardOutput,
+                        StandardError = standardError
+                    };
                 }
-
-                standardOutput = p.StandardOutput.ReadToEnd();
-                standardError = p.StandardError.ReadToEnd();
-                p.WaitForExit();
-                exitCode = p.ExitCode;
-
-                return new ProcessLaunchResult
+                else
                 {
-                    Started = true,
-                    ExitCode = exitCode,
-                    Message = $"Proceso completado. Código de salida: {exitCode}.",
-                    StandardOutput = standardOutput,
-                    StandardError = standardError
-                };
+                    var psCommand = $"Start-Process -FilePath \\\"{fileName}\\\" -ArgumentList \\\"{arguments}\\\" -Verb RunAs";
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = "powershell.exe",
+                        Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{psCommand}\"",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    p = Process.Start(psi);
+                    if (p == null) return new ProcessLaunchResult { Started = false, Message = "No se pudo solicitar elevación." };
+                    standardOutput = p.StandardOutput.ReadToEnd();
+                    standardError = p.StandardError.ReadToEnd();
+                    p.WaitForExit();
+                    exitCode = p.ExitCode;
+                    return new ProcessLaunchResult
+                    {
+                        Started = exitCode == 0,
+                        ExitCode = exitCode,
+                        Message = "Se solicitó elevación. Acepte el cuadro de UAC para continuar.",
+                        StandardOutput = standardOutput,
+                        StandardError = standardError
+                    };
+                }
             }
             catch (Exception ex)
             {

@@ -5,9 +5,9 @@
 <div align="center">
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows_10%2F11-blue.svg)](https://github.com/WilmWass/WassControlSys)
+[![Platform](https://img.shields.io/badge/platform-Windows_10%2F11-blue.svg)](https://github.com/WilmerWass/WassControlSys)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/status-Active_Development-orange.svg)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-v1.1.1_Stable-blue.svg)](CHANGELOG.md)
 
 **WassControlSys** es una suite de utilidades moderna diseñada por **WilmerWass** para devolverle el control de su sistema operativo. Optimice el rendimiento, limpie archivos basura, gestione la privacidad y elimine el bloatware, todo desde una interfaz unificada y elegante.
 
@@ -68,8 +68,8 @@ _(Capturas de pantalla próximamente en la carpeta `docs/images`)_
 
 ### Instalación
 
-1. Vaya a la sección de [Releases](https://github.com/WilmWass/WassControlSys/releases).
-2. Descargue el archivo `WassControlSys_vX.X.X.zip`.
+1. Vaya a la sección de [Releases](https://github.com/WilmerWass/WassControlSys/releases).
+2. Descargue el archivo `WassControlSys_v1.1.1.zip`.
 3. Descomprima el archivo en una carpeta de su elección.
 4. Ejecute `WassControlSys.exe` (click derecho -> Ejecutar como administrador recomendado).
 
@@ -81,7 +81,7 @@ Si desea compilar el proyecto desde el código fuente:
 
 ```bash
 # 1. Clonar el repositorio (por el autor original WilmerWass)
-git clone https://github.com/WilmWass/WassControlSys.git
+git clone https://github.com/WilmerWass/WassControlSys.git
 cd WassControlSys
 
 # 2. Restaurar dependencias

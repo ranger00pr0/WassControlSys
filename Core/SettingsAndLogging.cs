@@ -117,6 +117,7 @@ namespace WassControlSys.Models
         public bool AutoOptimizeRam { get; set; } = false;
         public double RamThresholdPercent { get; set; } = 85;
         public string Language { get; set; } = "es";
+        public bool IsDarkMode { get; set; } = true;
 
         public static AppSettings Default() => new AppSettings
         {
@@ -126,7 +127,8 @@ namespace WassControlSys.Models
             AccentColor = "#3B82F6",
             AutoOptimizeRam = false,
             RamThresholdPercent = 85,
-            Language = "es"
+            Language = "es",
+            IsDarkMode = true
         };
     }
 }

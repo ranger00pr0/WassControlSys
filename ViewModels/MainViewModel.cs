@@ -11,6 +11,9 @@ using System.Diagnostics;
 using System;
 using System.Linq; // Added for FirstOrDefault
 using System.IO; // Added for File and Directory operations
+using System.Security.Principal; // Added for administrator check
+
+#nullable enable
 
 namespace WassControlSys.ViewModels
 {
@@ -31,9 +34,14 @@ namespace WassControlSys.ViewModels
         private readonly IPrivacyService _privacyService; // Added
         private readonly IProcessManagerService _processManagerService;
         private readonly ILocalizationService _localizationService;
+        private readonly IRestorePointService _restorePointService;
+        private readonly IBatteryService _batteryService;
+        private readonly IWingetService _wingetService;
+        private readonly IDriverService _driverService;
+        private readonly IDiskAnalyzerService _diskAnalyzerService;
 
         // Constructor del ViewModel principal
-        public MainViewModel(ISystemMaintenanceService maintenance, IMonitoringService monitoringService, IPerformanceProfileService profiles, ISettingsService settings, ILogService log, ISystemInfoService systemInfoService, ISecurityService securityService, IDialogService dialogService, IStartupService startupService, IServiceOptimizerService serviceOptimizerService, IBloatwareService bloatwareService, IPrivacyService privacyService, IProcessManagerService processManagerService, ITemperatureMonitorService temperatureMonitorService, IDiskHealthService diskHealthService, ILocalizationService localizationService)
+        public MainViewModel(ISystemMaintenanceService maintenance, IMonitoringService monitoringService, IPerformanceProfileService profiles, ISettingsService settings, ILogService log, ISystemInfoService systemInfoService, ISecurityService securityService, IDialogService dialogService, IStartupService startupService, IServiceOptimizerService serviceOptimizerService, IBloatwareService bloatwareService, IPrivacyService privacyService, IProcessManagerService processManagerService, ITemperatureMonitorService temperatureMonitorService, IDiskHealthService diskHealthService, ILocalizationService localizationService, IRestorePointService restorePointService, IBatteryService batteryService, IWingetService wingetService, IDriverService driverService, IDiskAnalyzerService diskAnalyzerService)
         {
             // Lógica de inicialización para el ViewModel principal
             _maintenance = maintenance;
@@ -52,8 +60,11 @@ namespace WassControlSys.ViewModels
             _temperatureMonitorService = temperatureMonitorService;
             _diskHealthService = diskHealthService;
             _localizationService = localizationService;
-
-            WelcomeMessage = "¡Bienvenido a WassControlSys! (Fase 1: Núcleo de Mantenimiento)";
+            _restorePointService = restorePointService;
+            _batteryService = batteryService;
+            _wingetService = wingetService;
+            _driverService = driverService;
+            _diskAnalyzerService = diskAnalyzerService;
             
             // Inicializar Comandos
             CleanTempFilesCommand = new RelayCommand(async _ => await ExecuteCleanTempFilesAsync()); 
@@ -98,6 +109,15 @@ namespace WassControlSys.ViewModels
             KillProcessCommand = new RelayCommand<ProcessInfoDto>(async p => await ExecuteKillProcessAsync(p));
             RefreshThermalCommand = new RelayCommand(async _ => await UpdateThermalAsync());
             RefreshDiskHealthCommand = new RelayCommand(async _ => await LoadDiskHealthAsync());
+            
+            CreateRestorePointCommand = new RelayCommand(async _ => await ExecuteCreateRestorePointAsync());
+            UpdateAppCommand = new RelayCommand<string>(async id => await ExecuteUpdateAppAsync(id));
+            UpdateAllAppsCommand = new RelayCommand(async _ => await ExecuteUpdateAllAppsAsync());
+            ExportDriversCommand = new RelayCommand(async _ => await ExecuteExportDriversAsync());
+            AnalyzeDiskSpaceCommand = new RelayCommand<string>(async path => await ExecuteAnalyzeDiskSpaceAsync(path));
+            RefreshBatteryCommand = new RelayCommand(async _ => await LoadBatteryInfoAsync());
+            RefreshUpdatableAppsCommand = new RelayCommand(async _ => await LoadUpdatableAppsAsync());
+            CancelUpdateSearchCommand = new RelayCommand(_ => { IsSearchingUpdates = false; StatusMessage = "Búsqueda cancelada"; });
 
 
             // Establecer modo por defecto antes de cargar ajustes
@@ -112,29 +132,19 @@ namespace WassControlSys.ViewModels
             _monitoringTimer.Tick += (s, e) => UpdateSystemUsage();
             _monitoringTimer.Tick += async (s, e) => await UpdateThermalAsync();
             _monitoringTimer.Start();
-
-            // Cargar información del sistema
-            _ = LoadSystemInfoAsync();
-            _ = LoadSecurityStatusAsync();
-            _ = LoadStartupItemsAsync(); // Load startup items on startup
-            _ = LoadWindowsServicesAsync(); // Load Windows services on startup
-            _ = LoadBloatwareAppsAsync(); // Load bloatware apps on startup
-            _ = LoadPrivacySettingsAsync(); // Load privacy settings on startup
-            _ = LoadProcessesAsync();
-            _ = UpdateThermalAsync();
         }
 
         // Implementación de la interfaz INotifyPropertyChanged
         // Esto permite que la interfaz de usuario se actualice automáticamente cuando cambian las propiedades del ViewModel.
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         // Ejemplo de propiedad enlazable (bindable property)
-        private string _welcomeMessage;
+        private string _welcomeMessage = string.Empty;
         public string WelcomeMessage
         {
             get => _welcomeMessage;
@@ -217,7 +227,70 @@ namespace WassControlSys.ViewModels
             set { if (_diskUsage != value) { _diskUsage = value; OnPropertyChanged(); } }
         }
 
-        private SecurityStatus _securityStatus;
+        private ObservableCollection<double> _cpuPerCore = new();
+        public ObservableCollection<double> CpuPerCore
+        {
+            get => _cpuPerCore;
+            set { if (_cpuPerCore != value) { _cpuPerCore = value; OnPropertyChanged(); } }
+        }
+
+        private double _netSentMbps;
+        public double NetSentMbps
+        {
+            get => _netSentMbps;
+            set { if (_netSentMbps != value) { _netSentMbps = value; OnPropertyChanged(); } }
+        }
+
+        private double _netRecvMbps;
+        public double NetRecvMbps
+        {
+            get => _netRecvMbps;
+            set { if (_netRecvMbps != value) { _netRecvMbps = value; OnPropertyChanged(); } }
+        }
+
+        private int _activeTcpConnections;
+        public int ActiveTcpConnections
+        {
+            get => _activeTcpConnections;
+            set { if (_activeTcpConnections != value) { _activeTcpConnections = value; OnPropertyChanged(); } }
+        }
+
+        private double _diskReadsPerSec;
+        public double DiskReadsPerSec
+        {
+            get => _diskReadsPerSec;
+            set { if (_diskReadsPerSec != value) { _diskReadsPerSec = value; OnPropertyChanged(); } }
+        }
+
+        private double _diskWritesPerSec;
+        public double DiskWritesPerSec
+        {
+            get => _diskWritesPerSec;
+            set { if (_diskWritesPerSec != value) { _diskWritesPerSec = value; OnPropertyChanged(); } }
+        }
+
+        private double _diskAvgQueueLength;
+        public double DiskAvgQueueLength
+        {
+            get => _diskAvgQueueLength;
+            set { if (_diskAvgQueueLength != value) { _diskAvgQueueLength = value; OnPropertyChanged(); } }
+        }
+
+        private double _diskReadLatencyMs;
+        public double DiskReadLatencyMs
+        {
+            get => _diskReadLatencyMs;
+            set { if (_diskReadLatencyMs != value) { _diskReadLatencyMs = value; OnPropertyChanged(); } }
+        }
+
+        private double _diskWriteLatencyMs;
+        public double DiskWriteLatencyMs
+        {
+            get => _diskWriteLatencyMs;
+            set { if (_diskWriteLatencyMs != value) { _diskWriteLatencyMs = value; OnPropertyChanged(); } }
+        }
+
+        private SecurityStatus _securityStatus = new();
         public SecurityStatus SecurityStatus
         {
             get => _securityStatus;
@@ -231,7 +304,7 @@ namespace WassControlSys.ViewModels
             }
         }
 
-        private SystemInfo _systemInformation;
+        private SystemInfo _systemInformation = new();
         public SystemInfo SystemInformation
         {
             get => _systemInformation;
@@ -245,42 +318,70 @@ namespace WassControlSys.ViewModels
             }
         }
 
-        private ObservableCollection<StartupItem> _startupItems;
+        private BatteryInfo _batteryInfo = new();
+        public BatteryInfo BatteryInfo
+        {
+            get => _batteryInfo;
+            set { if (_batteryInfo != value) { _batteryInfo = value; OnPropertyChanged(); } }
+        }
+
+        private ObservableCollection<WingetApp> _updatableApps = new();
+        public ObservableCollection<WingetApp> UpdatableApps
+        {
+            get => _updatableApps;
+            set { if (_updatableApps != value) { _updatableApps = value; OnPropertyChanged(); } }
+        }
+
+        private bool _isSearchingUpdates;
+        public bool IsSearchingUpdates
+        {
+            get => _isSearchingUpdates;
+            set { if (_isSearchingUpdates != value) { _isSearchingUpdates = value; OnPropertyChanged(); } }
+        }
+
+        private ObservableCollection<FolderSizeInfo> _diskAnalysisResult = new();
+        public ObservableCollection<FolderSizeInfo> DiskAnalysisResult
+        {
+            get => _diskAnalysisResult;
+            set { if (_diskAnalysisResult != value) { _diskAnalysisResult = value; OnPropertyChanged(); } }
+        }
+
+        private ObservableCollection<StartupItem> _startupItems = new();
         public ObservableCollection<StartupItem> StartupItems
         {
             get => _startupItems;
             set { if (_startupItems != value) { _startupItems = value; OnPropertyChanged(); } }
         }
 
-        private ObservableCollection<WindowsService> _windowsServices;
+        private ObservableCollection<WindowsService> _windowsServices = new();
         public ObservableCollection<WindowsService> WindowsServices
         {
             get => _windowsServices;
             set { if (_windowsServices != value) { _windowsServices = value; OnPropertyChanged(); } }
         }
 
-        private ObservableCollection<BloatwareApp> _bloatwareApps;
+        private ObservableCollection<BloatwareApp> _bloatwareApps = new();
         public ObservableCollection<BloatwareApp> BloatwareApps
         {
             get => _bloatwareApps;
             set { if (_bloatwareApps != value) { _bloatwareApps = value; OnPropertyChanged(); } }
         }
 
-        private ObservableCollection<PrivacySetting> _privacySettings;
+        private ObservableCollection<PrivacySetting> _privacySettings = new();
         public ObservableCollection<PrivacySetting> PrivacySettings
         {
             get => _privacySettings;
             set { if (_privacySettings != value) { _privacySettings = value; OnPropertyChanged(); } }
         }
 
-        private ObservableCollection<ProcessInfoDto> _processes;
+        private ObservableCollection<ProcessInfoDto> _processes = new();
         public ObservableCollection<ProcessInfoDto> Processes
         {
             get => _processes;
             set { if (_processes != value) { _processes = value; OnPropertyChanged(); } }
         }
 
-        private ProcessImpactStats _processImpact;
+        private ProcessImpactStats _processImpact = new();
         public ProcessImpactStats ProcessImpact
         {
             get => _processImpact;
@@ -296,14 +397,14 @@ namespace WassControlSys.ViewModels
             set { if (_cpuTempC != value) { _cpuTempC = value; OnPropertyChanged(); } }
         }
 
-        private string _thermalAlert;
+        private string _thermalAlert = string.Empty;
         public string ThermalAlert
         {
             get => _thermalAlert;
             set { if (_thermalAlert != value) { _thermalAlert = value; OnPropertyChanged(); } }
         }
 
-        private ObservableCollection<DiskHealthInfo> _diskHealth;
+        private ObservableCollection<DiskHealthInfo> _diskHealth = new();
         public ObservableCollection<DiskHealthInfo> DiskHealth
         {
             get => _diskHealth;
@@ -480,6 +581,22 @@ namespace WassControlSys.ViewModels
             }
         }
 
+        private bool _isDarkMode = true;
+        public bool IsDarkMode
+        {
+            get => _isDarkMode;
+            set
+            {
+                if (_isDarkMode != value)
+                {
+                    _isDarkMode = value;
+                    OnPropertyChanged();
+                    if (Application.Current is App app) app.ChangeTheme(value);
+                    _ = SaveSettingsAsync();
+                }
+            }
+        }
+
         private string _accentColor = "#3B82F6";
         public string AccentColor
         {
@@ -548,6 +665,14 @@ namespace WassControlSys.ViewModels
         public ICommand KillProcessCommand { get; private set; }
         public ICommand RefreshThermalCommand { get; private set; }
         public ICommand RefreshDiskHealthCommand { get; private set; }
+        public ICommand CreateRestorePointCommand { get; private set; }
+        public ICommand UpdateAppCommand { get; private set; }
+        public ICommand UpdateAllAppsCommand { get; private set; }
+        public ICommand ExportDriversCommand { get; private set; }
+        public ICommand AnalyzeDiskSpaceCommand { get; private set; }
+        public ICommand RefreshBatteryCommand { get; private set; }
+        public ICommand RefreshUpdatableAppsCommand { get; private set; }
+        public ICommand CancelUpdateSearchCommand { get; private set; }
 
 
         // Método que se ejecuta cuando se invoca el comando CleanTempFilesCommand
@@ -662,15 +787,38 @@ namespace WassControlSys.ViewModels
 
         public ICommand NavigateCommand { get; private set; }
 
-        private void ExecuteNavigate(object parameter)
+        private async void ExecuteNavigate(object? parameter)
         {
-            if (parameter is AppSection section)
+            if (parameter == null) return;
+            AppSection target;
+            if (parameter is AppSection section) target = section;
+            else if (parameter is string s && Enum.TryParse(s, true, out AppSection parsed)) target = parsed;
+            else return;
+
+            CurrentSection = target;
+
+            // Carga bajo demanda al navegar
+            switch (target)
             {
-                CurrentSection = section;
-            }
-            else if (parameter is string s && Enum.TryParse(s, true, out AppSection parsed))
-            {
-                CurrentSection = parsed;
+                case AppSection.Dashboard:
+                    if (BatteryInfo == null) _ = LoadBatteryInfoAsync();
+                    break;
+                case AppSection.Rendimiento:
+                    if (Processes == null || Processes.Count == 0) _ = LoadProcessesAsync();
+                    _ = UpdateThermalAsync();
+                    if (WindowsServices == null || WindowsServices.Count == 0) _ = LoadWindowsServicesAsync();
+                    if (StartupItems == null || StartupItems.Count == 0) _ = LoadStartupItemsAsync();
+                    break;
+                case AppSection.Aplicaciones:
+                    if (BloatwareApps == null || BloatwareApps.Count == 0) _ = LoadBloatwareAppsAsync();
+                    _ = LoadUpdatableAppsAsync();
+                    break;
+                case AppSection.Hardware:
+                    if (string.IsNullOrWhiteSpace(SystemInformation?.MachineName)) _ = LoadSystemInfoAsync();
+                    if (DiskHealth == null || DiskHealth.Count == 0) _ = LoadDiskHealthAsync();
+                    if (PrivacySettings == null || PrivacySettings.Count == 0) _ = LoadPrivacySettingsAsync();
+                    if (string.IsNullOrWhiteSpace(SecurityStatus?.AntivirusName)) _ = LoadSecurityStatusAsync();
+                    break;
             }
         }
         
@@ -719,7 +867,7 @@ namespace WassControlSys.ViewModels
                 IsBusy = true;
                 _log?.Info("Analizando Disco...");
                 var r = await Task.Run(() => _maintenance.AnalyzeDisk());
-                string msg = r.Message;
+                string msg = r.Message ?? "Análisis completado.";
                 if (!string.IsNullOrEmpty(r.StandardOutput)) msg += "\n\n" + r.StandardOutput;
                 await _dialogService.ShowMessage(msg, "Análisis de Disco");
             }
@@ -734,12 +882,19 @@ namespace WassControlSys.ViewModels
         private async Task ExecuteCleanPrefetchAsync()
         {
             if (IsBusy) return;
+
+            if (!IsAdministrator())
+            {
+                await _dialogService.ShowMessage("Esta función requiere que la aplicación se ejecute con privilegios de administrador. Por favor, reinicie WassControlSys como Administrador.", "Privilegios Requeridos");
+                return;
+            }
+
             try
             {
                 IsBusy = true;
                 _log?.Info("Limpiando Prefetch...");
                 var r = await Task.Run(() => _maintenance.CleanPrefetch());
-                await _dialogService.ShowMessage(r.Message, "Limpieza Prefetch");
+                await _dialogService.ShowMessage(r.Message ?? "Prefetch limpiado.", "Limpieza Prefetch");
             }
             catch (Exception ex)
             {
@@ -784,6 +939,18 @@ namespace WassControlSys.ViewModels
             CpuUsage = usage.CpuUsage;
             RamUsage = usage.RamUsage;
             DiskUsage = usage.DiskUsage;
+            if (usage.CpuPerCore != null && usage.CpuPerCore.Length > 0)
+            {
+                CpuPerCore = new ObservableCollection<double>(usage.CpuPerCore);
+            }
+            NetSentMbps = usage.NetBytesSentPerSec / (1024.0 * 1024.0) * 8.0;
+            NetRecvMbps = usage.NetBytesReceivedPerSec / (1024.0 * 1024.0) * 8.0;
+            ActiveTcpConnections = usage.ActiveTcpConnections;
+            DiskReadsPerSec = usage.DiskReadsPerSec;
+            DiskWritesPerSec = usage.DiskWritesPerSec;
+            DiskAvgQueueLength = usage.DiskAvgQueueLength;
+            DiskReadLatencyMs = usage.DiskReadLatencyMs;
+            DiskWriteLatencyMs = usage.DiskWriteLatencyMs;
             if (AutoOptimizeRam && RamUsage >= RamThresholdPercent)
             {
                 if ((DateTime.Now - _lastAutoRamOptimization) > TimeSpan.FromMinutes(5))
@@ -805,9 +972,14 @@ namespace WassControlSys.ViewModels
                 AutoOptimizeRam = s.AutoOptimizeRam;
                 RamThresholdPercent = s.RamThresholdPercent;
                 SelectedLanguage = s.Language;
+                IsDarkMode = s.IsDarkMode;
                 if (Enum.TryParse<AppSection>(s.CurrentSection, true, out var section))
                 {
-                    CurrentSection = section;
+                    ExecuteNavigate(section);
+                }
+                else
+                {
+                    ExecuteNavigate(AppSection.Dashboard);
                 }
                 _log?.Info($"Settings cargados. Modo={s.SelectedMode}, Sección={s.CurrentSection}, Start={s.RunOnStartup}, Color={s.AccentColor}");
             }
@@ -830,7 +1002,8 @@ namespace WassControlSys.ViewModels
                     AccentColor = AccentColor,
                     AutoOptimizeRam = AutoOptimizeRam,
                     RamThresholdPercent = RamThresholdPercent,
-                    Language = SelectedLanguage
+                    Language = SelectedLanguage,
+                    IsDarkMode = IsDarkMode
                 };
                 await _settings.SaveAsync(s);
             }
@@ -849,8 +1022,9 @@ namespace WassControlSys.ViewModels
                     using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
                     if (enable)
                     {
-                        string path = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-                        if (path != null) key?.SetValue("WassControlSys", path);
+                        var process = System.Diagnostics.Process.GetCurrentProcess();
+                        string? path = process.MainModule?.FileName;
+                        if (!string.IsNullOrEmpty(path)) key?.SetValue("WassControlSys", path);
                     }
                     else
                     {
@@ -1039,6 +1213,7 @@ namespace WassControlSys.ViewModels
                 else
                 {
                     await _dialogService.ShowMessage($"No se pudo iniciar el servicio '{serviceName}'.", "Error");
+                    await TryRelaunchAsAdminAsync($"La operación para iniciar el servicio '{serviceName}' requiere permisos de administrador.");
                 }
             }
             catch (Exception ex)
@@ -1075,6 +1250,7 @@ namespace WassControlSys.ViewModels
                 else
                 {
                     await _dialogService.ShowMessage($"No se pudo detener el servicio '{serviceName}'.", "Error");
+                    await TryRelaunchAsAdminAsync($"La operación para detener el servicio '{serviceName}' requiere permisos de administrador.");
                 }
             }
             catch (Exception ex)
@@ -1085,6 +1261,35 @@ namespace WassControlSys.ViewModels
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        private async Task TryRelaunchAsAdminAsync(string reason)
+        {
+            try
+            {
+                bool confirm = await _dialogService.ShowConfirmation($"{reason}\n\n¿Desea reiniciar la aplicación con privilegios de administrador?", "Permisos requeridos");
+                if (!confirm) return;
+                string exePath = System.IO.Path.Combine(AppContext.BaseDirectory, "WassControlSys.exe");
+                if (!System.IO.File.Exists(exePath))
+                {
+                    using var proc = System.Diagnostics.Process.GetCurrentProcess();
+                    exePath = proc.MainModule?.FileName ?? string.Empty;
+                }
+                if (string.IsNullOrWhiteSpace(exePath)) return;
+                var psi = new System.Diagnostics.ProcessStartInfo(exePath)
+                {
+                    UseShellExecute = true,
+                    Verb = "runas"
+                };
+                System.Diagnostics.Process.Start(psi);
+                Environment.Exit(0);
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+            }
+            catch
+            {
             }
         }
 
@@ -1196,7 +1401,136 @@ namespace WassControlSys.ViewModels
         }
 
         // ===== NEW OPTIMIZATION METHODS =====
+
+        private bool IsAdministrator()
+        {
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                var principal = new WindowsPrincipal(identity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+        }
         
 
+        private async Task ExecuteCreateRestorePointAsync()
+        {
+            if (IsBusy) return;
+
+            if (!IsAdministrator())
+            {
+                await _dialogService.ShowMessage("Esta función requiere que la aplicación se ejecute con privilegios de administrador. Por favor, reinicie WassControlSys como Administrador.", "Privilegios Requeridos");
+                return;
+            }
+
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Creando punto de restauración...";
+                var r = await _restorePointService.CreateRestorePointAsync("Manual WassControlSys Checkpoint");
+                await _dialogService.ShowMessage(r.Message ?? "Operación finalizada.", r.Success ? "Éxito" : "Error");
+            }
+            finally { IsBusy = false; StatusMessage = ""; }
+        }
+
+        private async Task LoadBatteryInfoAsync()
+        {
+            try
+            {
+                BatteryInfo = await _batteryService.GetBatteryStatusAsync();
+            }
+            catch (Exception ex) { _log?.Warn($"Error batería: {ex.Message}"); }
+        }
+
+        private async Task LoadUpdatableAppsAsync()
+        {
+            try
+            {
+                IsSearchingUpdates = true;
+                StatusMessage = "Buscando actualizaciones...";
+                var apps = await _wingetService.GetUpdatableAppsAsync();
+                
+                // Si el usuario canceló durante el await, no actualizamos la lista
+                if (IsSearchingUpdates)
+                {
+                    UpdatableApps = new ObservableCollection<WingetApp>(apps);
+                    _log?.Info($"Actualizaciones winget encontradas: {UpdatableApps.Count}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log?.Error("Error cargando winget", ex);
+                if (IsSearchingUpdates) await _dialogService.ShowMessage($"Error al buscar actualizaciones: {ex.Message}", "Error");
+            }
+            finally 
+            { 
+                IsSearchingUpdates = false; 
+                StatusMessage = ""; 
+            }
+        }
+
+        private async Task ExecuteUpdateAppAsync(string id)
+        {
+            if (string.IsNullOrEmpty(id) || IsBusy) return;
+            try
+            {
+                IsBusy = true;
+                StatusMessage = $"Actualizando {id}...";
+                bool success = await _wingetService.UpdateAppAsync(id);
+                if (success) await LoadUpdatableAppsAsync();
+            }
+            finally { IsBusy = false; StatusMessage = ""; }
+        }
+
+        private async Task ExecuteUpdateAllAppsAsync()
+        {
+            if (IsBusy) return;
+
+            bool confirm = await _dialogService.ShowConfirmation("¿Está seguro de que desea actualizar todas las aplicaciones? Esta acción puede tardar varios minutos.", "Confirmar Actualización Masiva");
+            if (!confirm) return;
+
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Actualizando todas las aplicaciones...";
+                await _wingetService.UpdateAllAppsAsync();
+                await LoadUpdatableAppsAsync();
+            }
+            finally { IsBusy = false; StatusMessage = ""; }
+        }
+
+        private async Task ExecuteExportDriversAsync()
+        {
+            if (IsBusy) return;
+            try
+            {
+                // Dejar que el usuario elija carpeta o usar una por defecto
+                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WassControl_Drivers_Backup");
+                IsBusy = true;
+                StatusMessage = "Exportando controladores...";
+                var r = await _driverService.ExportDriversAsync(path);
+                await _dialogService.ShowMessage((r.Message ?? "Drivers exportados.") + $"\n\nUbicación: {path}", r.Success ? "Copia de Seguridad" : "Error");
+            }
+            finally { IsBusy = false; StatusMessage = ""; }
+        }
+
+        private async Task ExecuteAnalyzeDiskSpaceAsync(string path)
+        {
+            if (IsBusy) return;
+            if (string.IsNullOrEmpty(path)) path = "C:\\"; // Default
+
+            try
+            {
+                IsBusy = true;
+                StatusMessage = $"Analizando {path}...";
+                var items = await _diskAnalyzerService.AnalyzeDirectoryAsync(path);
+                DiskAnalysisResult = new ObservableCollection<FolderSizeInfo>(items);
+            }
+            catch (Exception ex)
+            {
+                _log?.Error("Error analizando espacio", ex);
+                await _dialogService.ShowMessage(ex.Message, "Error");
+            }
+            finally { IsBusy = false; StatusMessage = ""; }
+        }
     }
 }

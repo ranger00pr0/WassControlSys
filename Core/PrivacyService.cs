@@ -84,11 +84,15 @@ namespace WassControlSys.Core
 
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(path))
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(path))
                 {
                     if (key != null)
                     {
-                        currentValue = (int)(key.GetValue(valueName) ?? 1);
+                        var val = key.GetValue(valueName);
+                        if (val != null && int.TryParse(val.ToString(), out int result))
+                        {
+                            currentValue = result;
+                        }
                     }
                 }
             }
@@ -117,11 +121,15 @@ namespace WassControlSys.Core
 
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(path))
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(path))
                 {
                     if (key != null)
                     {
-                        currentValue = (int)(key.GetValue(valueName) ?? 1);
+                        var val = key.GetValue(valueName);
+                        if (val != null && int.TryParse(val.ToString(), out int result))
+                        {
+                            currentValue = result;
+                        }
                     }
                 }
             }

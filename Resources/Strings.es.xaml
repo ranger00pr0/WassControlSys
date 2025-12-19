@@ -7,6 +7,8 @@
   <sys:String x:Key="Settings_RunOnStartup">Iniciar con Windows</sys:String>
   <sys:String x:Key="Settings_RunOnStartup_Desc">Ejecutar WassControl automáticamente al iniciar el sistema.</sys:String>
   <sys:String x:Key="Settings_Personalization">Personalización</sys:String>
+  <sys:String x:Key="Settings_DarkMode">Modo Oscuro</sys:String>
+  <sys:String x:Key="Settings_DarkMode_Desc">Cambia entre el tema claro y oscuro de la aplicación.</sys:String>
   <sys:String x:Key="Settings_AccentColor">Color de Acento</sys:String>
   <sys:String x:Key="Settings_Language">Idioma</sys:String>
   <sys:String x:Key="Language_Spanish">Español</sys:String>

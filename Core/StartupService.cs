@@ -100,7 +100,10 @@ namespace WassControlSys.Core
                                         Name = valueName,
                                         Path = path,
                                         IsEnabled = true, // Si está en Run, se considera habilitado
-                                        Type = StartupItemType.RegistryRun
+                                        Type = StartupItemType.RegistryRun,
+                                        SourceKeyPath = keyPath,
+                                        IsMachineWide = true,
+                                        ImpactScore = EstimateImpact(path)
                                     });
                                 }
                             }
@@ -129,7 +132,10 @@ namespace WassControlSys.Core
                                         Name = valueName,
                                         Path = path,
                                         IsEnabled = true, // Si está en Run, se considera habilitado
-                                        Type = StartupItemType.RegistryRun
+                                        Type = StartupItemType.RegistryRun,
+                                        SourceKeyPath = keyPath,
+                                        IsMachineWide = false,
+                                        ImpactScore = EstimateImpact(path)
                                     });
                                 }
                             }
@@ -146,16 +152,36 @@ namespace WassControlSys.Core
 
         private bool SetRegistryStartupItemState(StartupItem item, bool enable)
         {
-            // This is tricky. To "disable" a registry item without deleting it,
-            // we'd typically move it to a "disabled" key or rename it.
-            // Para simplificar en esta versión inicial, asumiremos que habilitar significa asegurar que está en la clave Run,
-            // y deshabilitar significa eliminarlo. Esto es destructivo, por lo que se necesitaría una advertencia en la UI.
-            _log.Warn($"SetRegistryStartupItemState for {item.Name} ({item.Type}): Currently not fully implemented/destructive.");
-            _log.Warn("Enabling/disabling registry startup items currently involves adding/removing entries, which is a destructive action.");
-            
-            // Este método requeriría privilegios administrativos para modificar las claves HKLM.
-            // Por ahora, devuelve falso ya que no está completamente implementado de forma segura.
-            return false;
+            try
+            {
+                RegistryKey root = item.IsMachineWide ? Registry.LocalMachine : Registry.CurrentUser;
+                string runKey = item.SourceKeyPath;
+                string disabledKey = runKey + "Disabled";
+                using var enabled = root.OpenSubKey(runKey, true) ?? root.CreateSubKey(runKey, true);
+                using var disabled = root.OpenSubKey(disabledKey, true) ?? root.CreateSubKey(disabledKey, true);
+                if (enabled == null || disabled == null) return false;
+                if (enable)
+                {
+                    var val = disabled.GetValue(item.Name) as string;
+                    if (string.IsNullOrEmpty(val)) return false;
+                    enabled.SetValue(item.Name, val);
+                    disabled.DeleteValue(item.Name, false);
+                    return true;
+                }
+                else
+                {
+                    var val = enabled.GetValue(item.Name) as string;
+                    if (string.IsNullOrEmpty(val)) return false;
+                    disabled.SetValue(item.Name, val);
+                    enabled.DeleteValue(item.Name, false);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Error toggling registry startup item {item.Name}", ex);
+                return false;
+            }
         }
 
         private IEnumerable<StartupItem> GetStartupFolderItems()
@@ -183,7 +209,10 @@ namespace WassControlSys.Core
                                     Name = Path.GetFileNameWithoutExtension(file),
                                     Path = file,
                                     IsEnabled = true, // Si está en la carpeta y es un tipo válido, está habilitado
-                                    Type = StartupItemType.StartupFolder
+                                    Type = StartupItemType.StartupFolder,
+                                    SourceKeyPath = path,
+                                    IsMachineWide = path.Equals(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), StringComparison.OrdinalIgnoreCase),
+                                    ImpactScore = EstimateImpact(file)
                                 });
                             }
                         }
@@ -199,12 +228,54 @@ namespace WassControlSys.Core
 
         private bool SetStartupFolderItemState(StartupItem item, bool enable)
         {
-            // Para simplificar, deshabilitar significaría moverlo fuera de la carpeta,
-            // habilitar significaría moverlo de vuelta. Esto también requiere un manejo cuidadoso
-            // y potencialmente privilegios administrativos si está en CommonStartup.
-            _log.Warn($"SetStartupFolderItemState for {item.Name} ({item.Type}): Currently not fully implemented/destructive.");
-            _log.Warn("Enabling/disabling startup folder items currently involves moving files, which is a destructive action.");
-            return false;
+            try
+            {
+                string folder = item.SourceKeyPath;
+                if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) return false;
+                string disabledFolder = Path.Combine(folder, "Disabled");
+                Directory.CreateDirectory(disabledFolder);
+                string src = item.Path;
+                string dst = Path.Combine(disabledFolder, Path.GetFileName(item.Path));
+                if (enable)
+                {
+                    if (File.Exists(dst))
+                    {
+                        string back = Path.Combine(folder, Path.GetFileName(item.Path));
+                        File.Move(dst, back, true);
+                        return true;
+                    }
+                    return false;
+                }
+                else
+                {
+                    if (File.Exists(src))
+                    {
+                        File.Move(src, dst, true);
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Error toggling startup folder item {item.Name}", ex);
+                return false;
+            }
+        }
+
+        private static double EstimateImpact(string path)
+        {
+            try
+            {
+                var fi = new FileInfo(path);
+                if (!fi.Exists) return 0.2;
+                double sizeMb = fi.Length / (1024.0 * 1024.0);
+                if (sizeMb > 100) return 0.9;
+                if (sizeMb > 50) return 0.7;
+                if (sizeMb > 10) return 0.5;
+                return 0.3;
+            }
+            catch { return 0.2; }
         }
     }
 }
