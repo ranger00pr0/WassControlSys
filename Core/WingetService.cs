@@ -64,20 +64,49 @@ namespace WassControlSys.Core
 
                             if (string.IsNullOrWhiteSpace(line)) continue;
 
-                            string name = line.Substring(0, idIndex).Trim();
-                            string id = line.Substring(idIndex, versionIndex - idIndex).Trim();
-                            string version = line.Substring(versionIndex, availableIndex - versionIndex).Trim();
-                            string availableVersion = line.Substring(availableIndex, sourceIndex - availableIndex).Trim();
-                            string source = line.Substring(sourceIndex).Trim();
-
-                            apps.Add(new WingetApp
+                            try
                             {
-                                Name = name,
-                                Id = id,
-                                CurrentVersion = version,
-                                AvailableVersion = availableVersion,
-                                Source = source
-                            });
+                                // Asegurar que la línea tenga longitud suficiente antes de Substring
+                                string name = line.Length > idIndex ? line.Substring(0, idIndex).Trim() : line.Trim();
+                                string id = "";
+                                if (line.Length > idIndex)
+                                {
+                                    int length = (line.Length > versionIndex ? versionIndex : line.Length) - idIndex;
+                                    id = line.Substring(idIndex, length).Trim();
+                                }
+                                
+                                string version = "";
+                                if (line.Length > versionIndex)
+                                {
+                                    int length = (line.Length > availableIndex ? availableIndex : line.Length) - versionIndex;
+                                    version = line.Substring(versionIndex, length).Trim();
+                                }
+
+                                string availableVersion = "";
+                                if (line.Length > availableIndex)
+                                {
+                                    int length = (line.Length > sourceIndex ? sourceIndex : line.Length) - availableIndex;
+                                    availableVersion = line.Substring(availableIndex, length).Trim();
+                                }
+
+                                string source = line.Length > sourceIndex ? line.Substring(sourceIndex).Trim() : "";
+
+                                if (!string.IsNullOrEmpty(id))
+                                {
+                                    apps.Add(new WingetApp
+                                    {
+                                        Name = name,
+                                        Id = id,
+                                        CurrentVersion = version,
+                                        AvailableVersion = availableVersion,
+                                        Source = source
+                                    });
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Warn($"Error parseando línea de winget: '{line}'. Error: {ex.Message}");
+                            }
                         }
                     }
                 }
@@ -148,6 +177,9 @@ namespace WassControlSys.Core
                     }
                     else
                     {
+                        _log.Warn($"Winget finalizó con código de salida: {process.ExitCode}");
+                        // Código 1978335198 puede aparecer en algunas instalaciones exitosas.
+                        // Código 9 podría requerir atención, pero a veces es solo una advertencia.
                         return false;
                     }
                 }

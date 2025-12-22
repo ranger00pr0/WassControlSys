@@ -323,3 +323,6 @@ WassControlSys_v*.zip
 error.txt
 start_log.txt
 package-lock.json
+
+# log
+log/

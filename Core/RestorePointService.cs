@@ -106,6 +106,10 @@ namespace WassControlSys.Core
                         }
                     }
                 }
+                catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
+                {
+                    _log.Warn("Acceso denegado al consultar puntos de restauración. Ejecute la aplicación como Administrador para ver esta información.");
+                }
                 catch (Exception ex)
                 {
                     _log.Error("Error obteniendo último punto de restauración", ex);

@@ -5,12 +5,18 @@ using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
 using WassControlSys.Core;
 using WassControlSys.ViewModels;
+using System.Drawing;
+using System.Windows.Forms;
+using Color = System.Windows.Media.Color;
+using ColorConverter = System.Windows.Media.ColorConverter;
 
 namespace WassControlSys
 {
     public partial class App : Application
     {
         private readonly ServiceProvider _serviceProvider;
+        private NotifyIcon? _notifyIcon;
+        public bool IsShuttingDown { get; private set; }
 
         public App()
         {
@@ -87,7 +93,79 @@ namespace WassControlSys
 
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
             mainWindow.DataContext = _serviceProvider.GetRequiredService<MainViewModel>();
+            
+            SetupTrayIcon();
+            
             mainWindow.Show();
+        }
+
+        private void SetupTrayIcon()
+        {
+            try
+            {
+                _notifyIcon = new NotifyIcon();
+                
+                // Intentar extraer el icono del ejecutable
+                try
+                {
+                    string assemblyLocation = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
+                    if (string.IsNullOrEmpty(assemblyLocation) || !System.IO.File.Exists(assemblyLocation))
+                    {
+                        // Fallback a icono de aplicación del sistema
+                        _notifyIcon.Icon = SystemIcons.Application;
+                    }
+                    else
+                    {
+                        _notifyIcon.Icon = Icon.ExtractAssociatedIcon(assemblyLocation);
+                    }
+                }
+                catch
+                {
+                    _notifyIcon.Icon = SystemIcons.Application;
+                }
+
+                _notifyIcon.Text = "WassControlSys";
+                _notifyIcon.Visible = true;
+                
+                _notifyIcon.DoubleClick += (s, e) => ShowMainWindow();
+
+                var contextMenu = new ContextMenuStrip();
+                contextMenu.Items.Add("Restaurar", null, (s, e) => ShowMainWindow());
+                contextMenu.Items.Add("-");
+                contextMenu.Items.Add("Salir", null, (s, e) => ShutdownApp());
+                
+                _notifyIcon.ContextMenuStrip = contextMenu;
+            }
+            catch (Exception ex)
+            {
+                var log = _serviceProvider?.GetService<ILogService>();
+                log?.Error("Error al configurar el icono de bandeja", ex);
+            }
+        }
+
+        public void ShowMainWindow()
+        {
+            if (MainWindow != null)
+            {
+                if (MainWindow.WindowState == WindowState.Minimized)
+                    MainWindow.WindowState = WindowState.Normal;
+                
+                MainWindow.Show();
+                MainWindow.Activate();
+            }
+        }
+
+        private void ShutdownApp()
+        {
+            IsShuttingDown = true;
+            _notifyIcon?.Dispose();
+            Shutdown();
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            _notifyIcon?.Dispose();
+            base.OnExit(e);
         }
 
         private void ValidateContrast(ILogService? log)

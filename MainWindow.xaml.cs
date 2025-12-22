@@ -47,6 +47,21 @@ public partial class MainWindow : Window
         this.Close();
     }
 
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (Application.Current is App app && app.IsShuttingDown)
+        {
+            // Permitir el cierre real
+            base.OnClosing(e);
+        }
+        else
+        {
+            // Cancelar cierre y ocultar
+            e.Cancel = true;
+            this.Hide();
+        }
+    }
+
     private void UpdateMaximizeButtonIcon()
     {
         if (MaximizeButton != null)

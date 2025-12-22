@@ -5,9 +5,23 @@ Todas las mejoras notables de este proyecto serán documentadas en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.1.5] - 2025-12-22
+
+### Añadido
+
+- **Ejecución en Segundo Plano (System Tray)**: La aplicación ahora se minimiza al área de notificación del sistema en lugar de cerrarse, permitiendo que las tareas de monitoreo continúen en segundo plano. Incluye un menú contextual para abrir o salir.
+
+### Corregido
+
+- **Winget**: Robustecido el parseo de la salida de Winget para evitar errores "Index and length", y mejor manejo de códigos de salida.
+- **Servicios de Windows**: Manejo específico de excepciones de "Acceso Denegado" para informar correctamente al usuario sobre la necesidad de privilegios administrativos.
+- **Puntos de Restauración**: Advertencia controlada en lugar de error crítico al consultar puntos de restauración sin permisos.
+- **Resolución de Conflictos**: Corrección de ambigüedades de tipos entre WPF y Windows Forms (`Color`, `Application`, `Binding`) al integrar el System Tray.
+
 ## [1.1.4] - 2025-12-21
 
 ### Añadido
+
 - **Progreso de Tareas en UI**:
   - La exportación de drivers ahora muestra una barra de progreso y estado en la misma vista, eliminando la ventana de terminal.
   - La actualización de aplicaciones con Winget ahora muestra una barra de progreso y estado para cada aplicación individualmente.
@@ -15,14 +29,17 @@ y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - **Liberador de Espacio en Disco**: Se ha añadido un botón y un selector en la vista de "Discos" para lanzar la utilidad de limpieza de disco de Windows (`cleanmgr.exe`) para una unidad específica.
 
 ### Cambiado
+
 - **Proceso de Actualización de Apps**: Las actualizaciones de aplicaciones que no provienen de la Microsoft Store (`msstore`) ahora piden confirmación al usuario antes de proceder.
 - **Detección de Antivirus y Firewall**: Se ha mejorado la lógica de detección en el `SecurityService` para interpretar de forma más fiable el estado de los productos de seguridad reportado por WMI.
 - **Mensajes de Error**: Mejorado el mensaje de error al fallar una actualización de Winget para guiar al usuario.
 
 ### Corregido
+
 - **Contraste de UI**: Solucionado un problema de contraste en el `ComboBox` de selección de idioma en la vista de configuración, mejorando la legibilidad.
 
 ### Eliminado
+
 - **(Opcional) Barra de Progreso de Desinstalación**: Se canceló la implementación de la barra de progreso para la desinstalación de bloatware debido a la alta complejidad y falta de un método estándar y seguro para obtener el progreso de los diferentes tipos de desinstaladores.
 
 ## [1.1.1] - 2025-12-18

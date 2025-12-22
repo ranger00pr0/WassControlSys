@@ -75,6 +75,11 @@ namespace WassControlSys.Core
                         return true; // Ya en ejecución, considerarlo un éxito
                     }
                 }
+                catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 5)
+                {
+                    _log.Error($"Error starting service {serviceName}: Acceso denegado. Se requieren privilegios de administrador.");
+                    return false;
+                }
                 catch (Exception ex)
                 {
                     _log.Error($"Error starting service {serviceName}", ex);
@@ -103,6 +108,11 @@ namespace WassControlSys.Core
                         _log.Info($"Service {serviceName} is already stopped or in pending state. Status: {sc.Status}");
                         return true; // Ya detenido, considerarlo un éxito
                     }
+                }
+                catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 5)
+                {
+                    _log.Error($"Error stopping service {serviceName}: Acceso denegado. Se requieren privilegios de administrador.");
+                    return false;
                 }
                 catch (Exception ex)
                 {
