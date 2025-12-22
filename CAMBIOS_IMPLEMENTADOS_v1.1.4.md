@@ -1,6 +1,6 @@
 # Cambios Implementados - WassControlSys
 
-## Fecha: 2025-12-20 (Actualización Final)
+## Fecha: 2025-12-20 (Actualización 1.1.4)
 
 ---
 
