@@ -315,6 +315,8 @@ publish/
 # Build documentation
 BUILD_*.md
 DISTRIBUTION_*.md
+Propuesta_Tecnica_v2.md
+Plan de Evolución WassControlSys v2.0.md
 
 # Project specific ignores
 WassControlSys_v*.zip
