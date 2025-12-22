@@ -222,7 +222,7 @@ public class MiClase
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/TU_USUARIO/WassControlSys.git
+git clone https://github.com/WilmerWass/WassControlSys.git
 cd WassControlSys
 
 # 2. Restaurar paquetes NuGet
