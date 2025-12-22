@@ -41,10 +41,20 @@
                             <GridViewColumn Header="Acciones" Width="100">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Desinstalar" 
-                                                Command="{Binding DataContext.UninstallBloatwareAppCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" 
-                                                CommandParameter="{Binding}" 
-                                                Style="{StaticResource SecondaryButtonStyle}"/>
+                                        <Grid>
+                                            <!-- Uninstall Button -->
+                                            <Button Content="Desinstalar"
+                                                    Command="{Binding DataContext.UninstallBloatwareAppCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource SecondaryButtonStyle}"
+                                                    Visibility="{Binding IsUninstalling, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"/>
+
+                                            <!-- Progress Bar -->
+                                            <ProgressBar IsIndeterminate="True"
+                                                         Width="50" Height="10"
+                                                         Visibility="{Binding IsUninstalling, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

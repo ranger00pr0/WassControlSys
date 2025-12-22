@@ -1548,25 +1548,22 @@ namespace WassControlSys.ViewModels
 
         private async Task ExecuteUninstallBloatwareAppAsync(BloatwareApp app)
         {
-            if (app == null || IsBusy) return;
+            if (app == null || app.IsUninstalling) return; // Check app-specific flag
 
             bool confirm = await _dialogService.ShowConfirmation($"¿Está seguro de que desea desinstalar '{app.Name}'? Esta acción no se puede deshacer.", "Confirmar Desinstalación");
             if (!confirm) return;
 
             try
             {
-                IsBusy = true;
+                app.IsUninstalling = true; // Set app-specific flag
                 _log?.Info($"Desinstalando aplicación de bloatware: {app.Name}");
                 bool success = await _bloatwareService.UninstallBloatwareAppAsync(app);
                 if (success)
                 {
                     BloatwareApps.Remove(app); // Remove from UI list
-                    await _dialogService.ShowMessage($"'{app.Name}' desinstalado correctamente.", "Éxito");
+                    // The service now shows the final dialog.
                 }
-                else
-                {
-                    await _dialogService.ShowMessage($"No se pudo desinstalar '{app.Name}'.", "Error");
-                }
+                // The service shows the error dialog on failure.
             }
             catch (Exception ex)
             {
@@ -1575,7 +1572,7 @@ namespace WassControlSys.ViewModels
             }
             finally
             {
-                IsBusy = false;
+                app.IsUninstalling = false; // Reset app-specific flag
             }
         }
 

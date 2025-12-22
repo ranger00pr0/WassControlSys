@@ -93,35 +93,54 @@ namespace WassControlSys.Core
                 return false;
             }
 
-            // Siempre pedir confirmación antes de desinstalar
-            bool confirm = await _dialogService.ShowConfirmation($"¿Está seguro de que desea desinstalar '{app.Name}'? Esta acción no se puede deshacer.", "Confirmar Desinstalación");
-            if (!confirm) return false;
-
             try
             {
                 _log.Info($"Attempting to uninstall bloatware app: {app.Name} with command: {app.UninstallCommand}");
                 
-                ProcessStartInfo psi;
-                string command = app.UninstallCommand.Trim();
-                string arguments = "";
+                string uninstallString = app.UninstallCommand.Trim();
+                string executable;
+                string arguments;
 
-                // Handle quotes in the command path
-                if (command.StartsWith("\""))
+                if (uninstallString.StartsWith("\""))
                 {
-                    int endQuoteIndex = command.IndexOf('"', 1);
+                    // Path is quoted, e.g., "\"C:\\Program Files\\App\\uninstall.exe\" /arg"
+                    int endQuoteIndex = uninstallString.IndexOf('"', 1);
                     if (endQuoteIndex > 0)
                     {
-                        arguments = command.Substring(endQuoteIndex + 1).Trim();
-                        command = command.Substring(1, endQuoteIndex - 1);
+                        executable = uninstallString.Substring(1, endQuoteIndex - 1);
+                        arguments = (uninstallString.Length > endQuoteIndex + 1) ? uninstallString.Substring(endQuoteIndex + 1).Trim() : "";
+                    }
+                    else
+                    {
+                        // Malformed quote, but try to use it as is
+                        executable = uninstallString;
+                        arguments = "";
                     }
                 }
-                else if (command.Contains(" "))
+                else if (uninstallString.ToLower().Contains(".exe"))
                 {
-                    arguments = command.Substring(command.IndexOf(" ") + 1).Trim();
-                    command = command.Substring(0, command.IndexOf(" ")).Trim();
+                    // Path is not quoted but contains .exe, e.g., "C:\\Program Files\\App\\uninstall.exe /arg"
+                    int exeIndex = uninstallString.ToLower().IndexOf(".exe");
+                    executable = uninstallString.Substring(0, exeIndex + 4);
+                    arguments = (uninstallString.Length > exeIndex + 4) ? uninstallString.Substring(exeIndex + 4).Trim() : "";
                 }
-
-                psi = new ProcessStartInfo(command, arguments)
+                else
+                {
+                    // No quotes and no .exe, e.g., "msiexec /i {guid}"
+                    int firstSpace = uninstallString.IndexOf(' ');
+                    if (firstSpace > 0)
+                    {
+                        executable = uninstallString.Substring(0, firstSpace);
+                        arguments = uninstallString.Substring(firstSpace + 1).Trim();
+                    }
+                    else
+                    {
+                        executable = uninstallString;
+                        arguments = "";
+                    }
+                }
+                
+                var psi = new ProcessStartInfo(executable, arguments)
                 {
                     UseShellExecute = true,
                     Verb = "runas" // Request UAC elevation
