@@ -35,7 +35,7 @@ Este proyecto se adhiere a un código de conducta. Al participar, se espera que 
 ```bash
 # Haz fork del repositorio en GitHub
 # Luego clona tu fork
-git clone https://github.com/TU_USUARIO/WassControlSys.git
+git clone https://github.com/WilmerWass/WassControlSys.git
 cd WassControlSys
 ```
 
