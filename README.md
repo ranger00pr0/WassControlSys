@@ -63,15 +63,26 @@ _(Capturas de pantalla próximamente en la carpeta `docs/images`)_
 ### Requisitos Previos
 
 - Windows 10 (versión 1809 o superior) o Windows 11.
-- [.NET 8.0 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
 - Permisos de Administrador (para funciones de limpieza y optimización).
+
+### Versiones Disponibles
+
+Elija la versión que mejor se adapte a sus necesidades:
+
+*   **WassControlSys v1.1.4 (Autocontenida)**
+    *   **Descripción:** Ideal para la mayoría de los usuarios. Incluye el .NET 8.0 Runtime integrado, por lo que **no necesita instalar .NET por separado**. Simplemente descargue, descomprima y ejecute.
+    *   **Descarga Directa:** [WassControlSys_v1.1.4_SelfContained.zip](https://github.com/WilmerWass/WassControlSys/releases/download/1.1.4/WassControlSys_v1.1.4_SelfContained.zip)
+
+*   **WassControlSys v1.1.4 (Requiere .NET)**
+    *   **Descripción:** Esta es la versión más ligera en tamaño de descarga. **Requiere que el .NET 8.0 Desktop Runtime esté instalado** previamente en su sistema.
+    *   **Descarga Directa:** [WassControlSys_v1.1.4_Normal.zip](https://github.com/WilmerWass/WassControlSys/releases/download/1.1.4/WassControlSys_v1.1.4_Normal.zip)
+    *   **Descargar .NET 8.0 Desktop Runtime:** [Aquí](https://dotnet.microsoft.com/download/dotnet/8.0)
 
 ### Instalación
 
-1. Vaya a la sección de [Releases](https://github.com/WilmerWass/WassControlSys/releases).
-2. Descargue el archivo `WassControlSys_v1.1.4.zip`.
-3. Descomprima el archivo en una carpeta de su elección.
-4. Ejecute `WassControlSys.exe` (click derecho -> Ejecutar como administrador recomendado).
+1.  Descargue el archivo `.zip` de la versión elegida.
+2.  Descomprima el archivo en una carpeta de su elección.
+3.  Ejecute `WassControlSys.exe` (se recomienda "Ejecutar como administrador" para acceso completo a las funciones).
 
 ---
 
