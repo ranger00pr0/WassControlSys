@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+  <!-- Settings -->
+  <sys:String x:Key="Settings_Title">Settings</sys:String>
+  <sys:String x:Key="Settings_General">General</sys:String>
+  <sys:String x:Key="Settings_RunOnStartup">Run on Windows startup</sys:String>
+  <sys:String x:Key="Settings_RunOnStartup_Desc">Run WassControl automatically when the system starts.</sys:String>
+  <sys:String x:Key="Settings_Personalization">Personalization</sys:String>
+  <sys:String x:Key="Settings_DarkMode">Dark Mode</sys:String>
+  <sys:String x:Key="Settings_DarkMode_Desc">Switch between light and dark themes for the application.</sys:String>
+  <sys:String x:Key="Settings_AccentColor">Accent Color</sys:String>
+  <sys:String x:Key="Settings_Language">Language</sys:String>
+  <sys:String x:Key="Language_Spanish">Spanish</sys:String>
+  <sys:String x:Key="Language_English">English</sys:String>
+
+  <!-- Optimization -->
+  <sys:String x:Key="Optimization_DNS_Title">DNS Cache</sys:String>
+  <sys:String x:Key="Optimization_DNS_Desc">Clear DNS cache to fix connectivity issues and improve browsing speed.</sys:String>
+  <sys:String x:Key="Optimization_DNS_Button">Clear DNS</sys:String>
+
+  <sys:String x:Key="Optimization_Defrag_Title">Defragmentation</sys:String>
+  <sys:String x:Key="Optimization_Defrag_Desc">Analyze disk fragmentation status. (HDD only, not recommended for SSD)</sys:String>
+  <sys:String x:Key="Optimization_Defrag_Button">Analyze Disk</sys:String>
+
+  <sys:String x:Key="Optimization_SearchIndex_Title">Search Index</sys:String>
+  <sys:String x:Key="Optimization_SearchIndex_Desc">Rebuild Windows search index to improve search speed.</sys:String>
+  <sys:String x:Key="Optimization_SearchIndex_Button">Rebuild Index</sys:String>
+
+  <sys:String x:Key="Optimization_Prefetch_Title">Prefetch</sys:String>
+  <sys:String x:Key="Optimization_Prefetch_Desc">Clean old prefetch files no longer needed to optimize startup.</sys:String>
+  <sys:String x:Key="Optimization_Prefetch_Button">Clean Prefetch</sys:String>
+</ResourceDictionary>

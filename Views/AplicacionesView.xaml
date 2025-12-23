@@ -1,0 +1,92 @@
+<UserControl x:Class="WassControlSys.Views.AplicacionesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Gestión de Aplicaciones" Style="{StaticResource HeaderTextStyle}"/>
+
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
+            <!-- Actualizaciones -->
+            <TabItem Header="Actualizaciones (Winget)">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                            <WrapPanel Orientation="Horizontal">
+                                <Button Content="Buscar Actualizaciones" Command="{Binding RefreshUpdatableAppsCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,10,0"
+                                        IsEnabled="{Binding IsSearchingUpdates, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"/>
+                                <Button Content="Actualizar Todo" Command="{Binding UpdateAllAppsCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0"/>
+                                <Button Content="Cancelar Búsqueda" Command="{Binding CancelUpdateSearchCommand}" Style="{StaticResource DangerButtonStyle}" 
+                                        Visibility="{Binding IsSearchingUpdates, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </WrapPanel>
+
+                            <!-- Estado de búsqueda local -->
+                            <Border Margin="0,10,0,0" Visibility="{Binding IsSearchingUpdates, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                                    Background="{DynamicResource SurfaceBrush}" Padding="10" CornerRadius="8">
+                                <StackPanel>
+                                    <TextBlock Text="Buscando actualizaciones en Winget..." Foreground="{DynamicResource TextBrush}" Margin="0,0,0,5"/>
+                                    <ProgressBar IsIndeterminate="True" Height="4"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding UpdatableApps}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False"
+                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                  Visibility="{Binding IsSearchingUpdates, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="Versión Actual" Binding="{Binding CurrentVersion}" Width="120"/>
+                                <DataGridTextColumn Header="Nueva Versión" Binding="{Binding AvailableVersion}" Width="120"/>
+                                <DataGridTemplateColumn Header="Acción" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Actualizar" Command="{Binding DataContext.UpdateAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding Id}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- Desinstalador -->
+            <TabItem Header="Desinstalador (Bloatware)">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Button Grid.Row="0" Content="Refrescar Lista" Command="{Binding RefreshBloatwareAppsCommand}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding BloatwareApps}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False"
+                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="Editor" Binding="{Binding Publisher}" Width="150"/>
+                                <DataGridTemplateColumn Header="Acción" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Eliminar" Command="{Binding DataContext.UninstallBloatwareAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource DangerButtonStyle}" Padding="10,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

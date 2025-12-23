@@ -1,0 +1,69 @@
+<UserControl x:Class="WassControlSys.Views.OptimizationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,0">
+            <TextBlock Text="Módulo de Optimización" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,30"/>
+            
+            <WrapPanel Orientation="Horizontal">
+                <!-- RAM Optimization -->
+                <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,20,20" Width="300" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="Memoria RAM" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                        <TextBlock Text="Libera memoria de procesos inactivos para mejorar el rendimiento." Foreground="#AAA" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap" Height="60"/>
+                        <Button Content="Optimizar RAM" Command="{Binding OptimizeRamCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- DNS Cache -->
+                <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,20,20" MinWidth="260" MaxWidth="360" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Optimization_DNS_Title}" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                        <TextBlock Text="{DynamicResource Optimization_DNS_Desc}" Foreground="#AAA" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap" Height="60"/>
+                        <Button Content="{DynamicResource Optimization_DNS_Button}" Command="{Binding FlushDnsCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Disk Defrag Analysis -->
+                <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,20,20" MinWidth="260" MaxWidth="360" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Optimization_Defrag_Title}" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                        <TextBlock Text="{DynamicResource Optimization_Defrag_Desc}" Foreground="#AAA" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap" Height="60"/>
+                        <Button Content="{DynamicResource Optimization_Defrag_Button}" Command="{Binding AnalyzeDiskCommand}" Style="{StaticResource SecondaryButtonStyle}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Windows Search Index -->
+                <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,20,20" MinWidth="260" MaxWidth="360" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Optimization_SearchIndex_Title}" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                        <TextBlock Text="{DynamicResource Optimization_SearchIndex_Desc}" Foreground="#AAA" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap" Height="60"/>
+                        <Button Content="{DynamicResource Optimization_SearchIndex_Button}" Command="{Binding RebuildSearchIndexCommand}" Style="{StaticResource SecondaryButtonStyle}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Prefetch Cleanup -->
+                <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,20,20" MinWidth="260" MaxWidth="360" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Optimization_Prefetch_Title}" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                        <TextBlock Text="{DynamicResource Optimization_Prefetch_Desc}" Foreground="#AAA" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap" Height="60"/>
+                        <Button Content="{DynamicResource Optimization_Prefetch_Button}" Command="{Binding CleanPrefetchCommand}" Style="{StaticResource SecondaryButtonStyle}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Network Reset -->
+                <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,20,20" Width="300" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="Red" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                        <TextBlock Text="Reinicia la configuración de red para resolver problemas de conectividad." Foreground="#AAA" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap" Height="60"/>
+                        <Button Content="Reiniciar Red" Command="{Binding ResetNetworkCommand}" Style="{StaticResource SecondaryButtonStyle}"/>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

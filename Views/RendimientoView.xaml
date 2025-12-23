@@ -1,0 +1,543 @@
+<UserControl x:Class="WassControlSys.Views.RendimientoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="800">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Rendimiento y Procesos" Style="{StaticResource HeaderTextStyle}"/>
+
+        <!-- Dashboard Superior: CPU, Memoria, Núcleos, Red, Disco -->
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="25,20" Margin="0,0,0,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Procesador (CPU) - Temperatura -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" MinWidth="120">
+                    <TextBlock Text="Procesador (CPU)" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                               FontSize="13" 
+                               Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding CpuTempC, StringFormat={}{0:F0}°C}" 
+                               Foreground="{DynamicResource TextBrush}" 
+                               FontSize="38" 
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding ThermalAlert}" 
+                               Foreground="#FF4444" 
+                               FontSize="11" 
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Center"
+                               Margin="0,4,0,0"
+                               Visibility="{Binding ThermalAlert, Converter={StaticResource StringNotEmptyToVisibilityConverter}}"/>
+                </StackPanel>
+
+                <!-- Separador 1 -->
+                <Border Grid.Column="1" Width="1" Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="12,0"/>
+
+                <!-- Memoria (RAM) -->
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" MinWidth="120">
+                    <TextBlock Text="Memoria" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                               FontSize="13" 
+                               Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding RamUsage, StringFormat={}{0:F0}}" 
+                                   Foreground="{DynamicResource TextBrush}" 
+                                   FontSize="38" 
+                                   FontWeight="Bold"/>
+                        <TextBlock Text="%" 
+                                   Foreground="{DynamicResource TextBrush}" 
+                                   FontSize="24" 
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Bottom"
+                                   Margin="2,0,0,4"/>
+                    </StackPanel>
+                    <TextBlock Text="GB en uso" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                               FontSize="11" 
+                               HorizontalAlignment="Center"
+                               Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Separador 2 -->
+                <Border Grid.Column="3" Width="1" Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="12,0"/>
+
+                <!-- Uso por Núcleo -->
+                <StackPanel Grid.Column="4" VerticalAlignment="Center" MinWidth="280">
+                    <TextBlock Text="Uso por Núcleo" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                               FontSize="13" 
+                               Margin="0,0,0,10"/>
+                    <ItemsControl ItemsSource="{Binding CpuPerCore}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="65" 
+                                        Height="55" 
+                                        Margin="0,0,10,0" 
+                                        Background="{DynamicResource WindowBackgroundBrush}" 
+                                        CornerRadius="8" 
+                                        ToolTip="{Binding Index, StringFormat={}Núcleo {0}}">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding Index, StringFormat={}C{0}}" 
+                                                   FontSize="11" 
+                                                   Foreground="{DynamicResource SecondaryTextBrush}" 
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,0,0,3"/>
+                                        <TextBlock Text="{Binding Usage, StringFormat={}{0:F0}%}" 
+                                                   FontSize="16" 
+                                                   FontWeight="Bold" 
+                                                   Foreground="{DynamicResource TextBrush}" 
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Separador 3 -->
+                <Border Grid.Column="5" Width="1" Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="12,0"/>
+
+                <!-- Red -->
+                <StackPanel Grid.Column="6" VerticalAlignment="Center" MinWidth="120">
+                    <TextBlock Text="Red" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                               FontSize="13" 
+                               Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding NetRecvMbps, StringFormat={}{0:F1}}" 
+                                   Foreground="{DynamicResource TextBrush}" 
+                                   FontSize="38" 
+                                   FontWeight="Bold"/>
+                        <TextBlock Text=" Mbps" 
+                                   Foreground="{DynamicResource TextBrush}" 
+                                   FontSize="16" 
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Bottom"
+                                   Margin="4,0,0,6"/>
+                    </StackPanel>
+                    <TextBlock Text="↓ Descarga" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                               FontSize="11" 
+                               HorizontalAlignment="Center"
+                               Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Separador 4 -->
+                <Border Grid.Column="7" Width="1" Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="12,0"/>
+
+                <!-- Disco -->
+                <StackPanel Grid.Column="8" VerticalAlignment="Center" MinWidth="120">
+                    <TextBlock Text="Disco" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                               FontSize="13" 
+                               Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding DiskWritesPerSec, StringFormat={}{0:F0}}" 
+                                   Foreground="{DynamicResource TextBrush}" 
+                                   FontSize="38" 
+                                   FontWeight="Bold"/>
+                        <TextBlock Text="/s" 
+                                   Foreground="{DynamicResource TextBrush}" 
+                                   FontSize="16" 
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Bottom"
+                                   Margin="4,0,0,6"/>
+                    </StackPanel>
+                    <TextBlock Text="Escrituras" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                               FontSize="11" 
+                               HorizontalAlignment="Center"
+                               Margin="0,4,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0">
+            <!-- Procesos -->
+            <TabItem Header="Procesos Activos">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="15">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                            <!-- Barra de búsqueda y botón actualizar -->
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Cuadro de búsqueda -->
+                            <Border Grid.Column="0" 
+                                    Background="{DynamicResource WindowBackgroundBrush}" 
+                                    BorderBrush="{DynamicResource SecondaryTextBrush}" 
+                                    BorderThickness="1" 
+                                    CornerRadius="6"
+                                    Padding="10,8">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Width" Value="200"/>
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Width" To="300" Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Width" To="200" Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Ícono de búsqueda -->
+                                    <TextBlock Grid.Column="0" 
+                                               Text="🔍" 
+                                               FontSize="14" 
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,8,0"/>
+                                    
+                                    <!-- TextBox de búsqueda -->
+                                    <TextBox Grid.Column="1" 
+                                             Text="{Binding ProcessSearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             VerticalAlignment="Center"
+                                             FontSize="13">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Style.Triggers>
+                                                    <Trigger Property="Text" Value="">
+                                                        <Setter Property="Background">
+                                                            <Setter.Value>
+                                                                <VisualBrush Stretch="None" AlignmentX="Left">
+                                                                    <VisualBrush.Visual>
+                                                                        <TextBlock Text="Buscar proceso por nombre o PID" 
+                                                                                   Foreground="White" 
+                                                                                   FontSize="13"
+                                                                                   Opacity="0.6"/>
+                                                                    </VisualBrush.Visual>
+                                                                </VisualBrush>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+                                    
+                                    <!-- Botón limpiar búsqueda -->
+                                    <Button Grid.Column="2" 
+                                            Content="✕" 
+                                            Command="{Binding ClearProcessSearchCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Foreground="{DynamicResource SecondaryTextBrush}"
+                                            FontSize="14"
+                                            Padding="5,0"
+                                            Cursor="Hand"
+                                            Visibility="{Binding ProcessSearchText, Converter={StaticResource StringNotEmptyToVisibilityConverter}}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                            
+                            <!-- Botón Actualizar -->
+                            <Button Grid.Column="2" 
+                                    Content="Actualizar Lista" 
+                                    Command="{Binding RefreshProcessesCommand}" 
+                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                    Padding="15,8"/>
+                        </Grid>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding Processes}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False" SelectionMode="Single"
+                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="60"/>
+                            <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="Memoria (MB)" Binding="{Binding WorkingSetMb, StringFormat={}{0:F1}}" Width="100"/>
+                            <DataGridTemplateColumn Header="Acción" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="DETENER"
+                                                Command="{Binding DataContext.KillProcessCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource DangerButtonStyle}"
+                                                Padding="10,2"
+                                                ToolTip="Finalizar Proceso"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- Servicios -->
+            <TabItem Header="Servicios">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="15">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Barra de búsqueda y botón actualizar -->
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Cuadro de búsqueda -->
+                            <Border Grid.Column="0" 
+                                    Background="{DynamicResource WindowBackgroundBrush}" 
+                                    BorderBrush="{DynamicResource SecondaryTextBrush}" 
+                                    BorderThickness="1" 
+                                    CornerRadius="6"
+                                    Padding="10,8">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Width" Value="200"/>
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Width" To="300" Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Width" To="200" Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Ícono de búsqueda -->
+                                    <TextBlock Grid.Column="0" 
+                                               Text="🔍" 
+                                               FontSize="14" 
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,8,0"/>
+                                    
+                                    <!-- TextBox de búsqueda -->
+                                    <TextBox Grid.Column="1" 
+                                             Text="{Binding ServiceSearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             VerticalAlignment="Center"
+                                             FontSize="13">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Style.Triggers>
+                                                    <Trigger Property="Text" Value="">
+                                                        <Setter Property="Background">
+                                                            <Setter.Value>
+                                                                <VisualBrush Stretch="None" AlignmentX="Left">
+                                                                    <VisualBrush.Visual>
+                                                                        <TextBlock Text="Buscar servicio por nombre..." 
+                                                                                   Foreground="White" 
+                                                                                   FontSize="13"
+                                                                                   Opacity="0.6"/>
+                                                                    </VisualBrush.Visual>
+                                                                </VisualBrush>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+                                    
+                                    <!-- Botón limpiar búsqueda -->
+                                    <Button Grid.Column="2" 
+                                            Content="✕" 
+                                            Command="{Binding ClearServiceSearchCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Foreground="{DynamicResource SecondaryTextBrush}"
+                                            FontSize="14"
+                                            Padding="5,0"
+                                            Cursor="Hand"
+                                            Visibility="{Binding ServiceSearchText, Converter={StaticResource StringNotEmptyToVisibilityConverter}}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                            
+                            <!-- Botón Actualizar -->
+                            <Button Grid.Column="2" 
+                                    Content="Actualizar Lista" 
+                                    Command="{Binding RefreshServicesCommand}" 
+                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                    Padding="15,8"/>
+                        </Grid>
+                        
+                         <DataGrid Grid.Row="1" ItemsSource="{Binding WindowsServices}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False"
+                               VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Nombre" Binding="{Binding DisplayName}" Width="*"/>
+                            <DataGridTextColumn Header="Estado" Binding="{Binding Status}" Width="100"/>
+                            <DataGridTemplateColumn Header="Control" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Button Content="Iniciar" 
+                                                    Command="{Binding DataContext.StartServiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                                    CommandParameter="{Binding Name}" 
+                                                    Visibility="{Binding IsRunning, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" 
+                                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                                    Padding="15,2"
+                                                    MinWidth="80"/>
+                                            <Button Content="Detener" 
+                                                    Command="{Binding DataContext.StopServiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                                    CommandParameter="{Binding Name}" 
+                                                    Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                                                    Style="{StaticResource DangerButtonStyle}" 
+                                                    Padding="15,2"
+                                                    MinWidth="80"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- Inicio -->
+            <TabItem Header="Inicio (Startup)">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="15">
+                    <DataGrid ItemsSource="{Binding StartupItems}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False"
+                              VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Aplicación" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="Impacto" Binding="{Binding ImpactScore, StringFormat={}{0:F1}}" Width="100"/>
+                            <DataGridTemplateColumn Header="Estado" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="Habilitar" Command="{Binding DataContext.EnableStartupItemCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,2"/>
+                                            <Button Content="Deshabilitar" Command="{Binding DataContext.DisableStartupItemCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, Converter={StaticResource BooleanToVisibilityConverter}}" Style="{StaticResource DangerButtonStyle}" Padding="10,2"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+
+        </TabControl>
+    </Grid>
+</UserControl>

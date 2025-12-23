@@ -1,0 +1,143 @@
+<UserControl x:Class="WassControlSys.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <StackPanel>
+        <TextBlock Text="{DynamicResource Settings_Title}" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,30"/>
+
+        <!-- General Settings -->
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="25" Margin="0,0,0,20">
+            <StackPanel>
+                <TextBlock Text="{DynamicResource Settings_General}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,20"/>
+                
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{DynamicResource Settings_RunOnStartup}" Foreground="{DynamicResource TextBrush}" FontSize="15" Margin="0,0,0,5"/>
+                        <TextBlock Text="{DynamicResource Settings_RunOnStartup_Desc}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="13"/>
+                    </StackPanel>
+
+                    <ToggleButton Grid.Column="1" IsChecked="{Binding RunOnStartup}" VerticalAlignment="Center" Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Personalization -->
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="25">
+            <StackPanel>
+                <TextBlock Text="{DynamicResource Settings_Personalization}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,20"/>
+                
+                <Grid Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                           <TextBlock Text="{DynamicResource Settings_DarkMode}" Foreground="{DynamicResource TextBrush}" FontSize="15" Margin="0,0,5,5"/>
+                           <TextBlock Text="☀️/🌙" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
+                        </StackPanel>
+                        <TextBlock Text="{DynamicResource Settings_DarkMode_Desc}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="13"/>
+                    </StackPanel>
+                    <ToggleButton Grid.Column="1" IsChecked="{Binding IsDarkMode}" VerticalAlignment="Center" Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+
+                <TextBlock Text="{DynamicResource Settings_AccentColor}" Foreground="{DynamicResource TextBrush}" FontSize="15" Margin="0,0,0,15"/>
+                
+                <StackPanel Orientation="Horizontal">
+                    <!-- Blue (Default) -->
+                    <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#3B82F6" Width="40" Height="40" Margin="0,0,15,0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="#3B82F6" CornerRadius="20" BorderBrush="White" BorderThickness="0" ToolTip="Azul">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <!-- Green -->
+                    <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#10B981" Width="40" Height="40" Margin="0,0,15,0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="#10B981" CornerRadius="20" BorderBrush="White" BorderThickness="0" ToolTip="Verde">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    
+                    <!-- Red -->
+                    <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#EF4444" Width="40" Height="40" Margin="0,0,15,0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="#EF4444" CornerRadius="20" BorderBrush="White" BorderThickness="0" ToolTip="Rojo">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    
+                    <!-- Purple -->
+                    <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#8B5CF6" Width="40" Height="40" Margin="0,0,15,0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="#8B5CF6" CornerRadius="20" BorderBrush="White" BorderThickness="0" ToolTip="Púrpura">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                     <!-- Orange -->
+                    <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#F97316" Width="40" Height="40" Margin="0,0,15,0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="#F97316" CornerRadius="20" BorderBrush="White" BorderThickness="0" ToolTip="Naranja">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+
+                <!-- Language -->
+                <Grid Margin="0,20,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{DynamicResource Settings_Language}" Foreground="{DynamicResource TextBrush}" FontSize="15" Margin="0,0,0,5"/>
+                        <TextBlock Text="Los idiomas al momento de elegirse deben ser visible el texto para saber cual es y debe estar de acuerdo a ltema elegido" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
+                                   FontSize="12" 
+                                   FontStyle="Italic"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <ComboBox Grid.Column="1" SelectedValue="{Binding SelectedLanguage}" SelectedValuePath="Tag" Width="200" VerticalAlignment="Center">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="10,5"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                        <ComboBoxItem Content="ESPAÑOL" Tag="es"/>
+                        <ComboBoxItem Content="INGLÉS" Tag="en"/>
+                        <ComboBoxItem Content="PORTUGUÉS" Tag="pt"/>
+                    </ComboBox>
+                </Grid>
+
+                <TextBlock Text="Diagnóstico" Foreground="{DynamicResource TextBrush}" FontSize="15" Margin="0,20,0,10"/>
+                <Button Content="Abrir Carpeta de Logs" Command="{Binding OpenLogFolderCommand}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left"/>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

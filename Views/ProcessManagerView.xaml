@@ -1,0 +1,61 @@
+<UserControl x:Class="WassControlSys.Views.ProcessManagerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,20">
+            <TextBlock Text="Gestión de Procesos" Style="{StaticResource HeaderTextStyle}" Margin="0,0,20,0"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Reducir procesos en segundo plano" Command="{Binding ReduceBackgroundProcessesCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0"/>
+                <Button Content="Refrescar" Command="{Binding RefreshProcessesCommand}" Style="{StaticResource SecondaryButtonStyle}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="Procesos:" Foreground="White" FontSize="16" Margin="0,0,20,0"/>
+                    <TextBlock Text="{Binding ProcessImpact.ProcessCount, StringFormat=Total: {0}}" Foreground="#AAA" Margin="0,0,15,0"/>
+                    <TextBlock Text="{Binding ProcessImpact.TotalWorkingSetMb, StringFormat=Memoria: {0:F0} MB}" Foreground="#AAA"/>
+                </StackPanel>
+
+                <ListView Grid.Row="1" ItemsSource="{Binding Processes}" Background="Transparent" BorderThickness="0">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Nombre" Width="200" DisplayMemberBinding="{Binding Name}"/>
+                            <GridViewColumn Header="PID" Width="80" DisplayMemberBinding="{Binding Pid}"/>
+                            <GridViewColumn Header="Memoria (MB)" Width="120" DisplayMemberBinding="{Binding WorkingSetMb, StringFormat={}{0:F1}}"/>
+                            <GridViewColumn Header="Prioridad" Width="120" DisplayMemberBinding="{Binding Priority}"/>
+                            <GridViewColumn Header="Acciones" Width="320">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="Alta" Command="{Binding DataContext.SetProcessPriorityHighCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,5,0" />
+                                            <Button Content="Normal" Command="{Binding DataContext.SetProcessPriorityNormalCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,5,0" />
+                                            <Button Content="Baja" Command="{Binding DataContext.SetProcessPriorityBelowNormalCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,5,0" />
+                                            <Button Content="Finalizar" Command="{Binding DataContext.KillProcessCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryButtonStyle}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
+
