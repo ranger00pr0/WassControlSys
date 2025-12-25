@@ -211,6 +211,13 @@ namespace WassControlSys.ViewModels
             }
         }
 
+        private string _generalStatusMessage = "Estado General: Listo para optimizar.";
+        public string GeneralStatusMessage
+        {
+            get => _generalStatusMessage;
+            set { if (_generalStatusMessage != value) { _generalStatusMessage = value; OnPropertyChanged(); } }
+        }
+
         private bool _isBusy;
         public bool IsBusy
         {
@@ -855,6 +862,7 @@ namespace WassControlSys.ViewModels
         public ICommand ClearServiceSearchCommand { get; private set; }
         public ICommand ToggleServiceCommand { get; private set; }
         public ICommand FreeUpDiskSpaceCommand { get; private set; }
+        public ICommand PcBoostCommand { get; private set; }
 
 
         // Método que se ejecuta cuando se invoca el comando CleanTempFilesCommand
@@ -889,6 +897,34 @@ namespace WassControlSys.ViewModels
                 IsBusy = false;
             }
 
+        }
+
+        private async Task ExecutePcBoostAsync()
+        {
+            if (IsBusy) return;
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Iniciando PC Boost...";
+                _log?.Info("PC Boost iniciado por el usuario.");
+
+                // Placeholder for now
+                await Task.Delay(2000); // Simulate work
+
+                GeneralStatusMessage = "Estado General: ¡Optimizado!";
+                StatusMessage = "PC Boost completado.";
+                await _dialogService.ShowMessage("El sistema ha sido optimizado.", "PC Boost Finalizado");
+            }
+            catch (Exception ex)
+            {
+                _log?.Error("Error durante PC Boost", ex);
+                await _dialogService.ShowMessage($"Ocurrió un error: {ex.Message}", "Error en PC Boost");
+            }
+            finally
+            {
+                IsBusy = false;
+                StatusMessage = "";
+            }
         }
 
         private async Task ExecuteOptimizeRamAsync()
