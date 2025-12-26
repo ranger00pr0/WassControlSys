@@ -129,6 +129,7 @@ namespace WassControlSys.ViewModels
             KillProcessCommand = new RelayCommand<ProcessInfoDto>(async p => await ExecuteKillProcessAsync(p));
             RefreshThermalCommand = new RelayCommand(async _ => await UpdateThermalAsync());
             RefreshDiskHealthCommand = new RelayCommand(async _ => await LoadDiskHealthAsync());
+            RefreshDriversCommand = new RelayCommand(async _ => await LoadDriversWithProblemsAsync());
             
             CreateRestorePointCommand = new RelayCommand(async _ => await ExecuteCreateRestorePointAsync());
             UpdateAppCommand = new RelayCommand<string>(async id => await ExecuteUpdateAppAsync(id));
@@ -142,6 +143,26 @@ namespace WassControlSys.ViewModels
             ClearServiceSearchCommand = new RelayCommand(_ => ServiceSearchText = string.Empty);
             ToggleServiceCommand = new RelayCommand<WindowsService>(async s => await ExecuteToggleServiceAsync(s));
             FreeUpDiskSpaceCommand = new RelayCommand(_ => ExecuteFreeUpDiskSpace(), _ => SelectedDriveForCleanup != null);
+            PcBoostCommand = new RelayCommand(async _ => await ExecutePcBoostAsync());
+            DeepScanCommand = new RelayCommand(async _ => await ExecuteDeepScanAsync());
+            OpenCleanmgrCommand = new RelayCommand(_ => ExecuteOpenCleanmgr());
+            RunToolCommand = new RelayCommand(p => 
+            {
+                if (p is string tool)
+                {
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo(tool) { UseShellExecute = true });
+                        _log?.Info($"Herramienta iniciada: {tool}");
+                    }
+                    catch (Exception ex)
+                    {
+                        _log?.Error($"Error al iniciar herramienta: {tool}", ex);
+                    }
+                }
+            });
+
+
 
 
 
@@ -158,10 +179,12 @@ namespace WassControlSys.ViewModels
             _monitoringTimer.Tick += async (s, e) => await UpdateThermalAsync();
             _monitoringTimer.Start();
 
+            OpenFolderCommand = new RelayCommand(p => ExecuteOpenFolder(p as string));
+            
             // Timer para procesos (30 seg)
             _processTimer = new DispatcherTimer();
             _processTimer.Interval = TimeSpan.FromSeconds(30);
-            _processTimer.Tick += (s, e) => _ = LoadProcessesAsync();
+            _processTimer.Tick += (s, e) => _ = LoadProcessesAsync(silent: true);
             _processTimer.Start();
 
             // Cargar info inicial
@@ -502,7 +525,15 @@ namespace WassControlSys.ViewModels
             set { if (_privacySettings != value) { _privacySettings = value; OnPropertyChanged(); } }
         }
 
+        private ObservableCollection<FolderSizeInfo> _deepScanResult = new();
+        public ObservableCollection<FolderSizeInfo> DeepScanResult
+        {
+            get => _deepScanResult;
+            set { if (_deepScanResult != value) { _deepScanResult = value; OnPropertyChanged(); } }
+        }
+
         private ObservableCollection<ProcessInfoDto> _processes = new();
+
         public ObservableCollection<ProcessInfoDto> Processes
         {
             get => _processes;
@@ -553,6 +584,13 @@ namespace WassControlSys.ViewModels
             set { if (_diskHealth != value) { _diskHealth = value; OnPropertyChanged(); } }
         }
 
+        private ObservableCollection<DriverInfo> _driversWithProblems = new();
+        public ObservableCollection<DriverInfo> DriversWithProblems
+        {
+            get => _driversWithProblems;
+            set { if (_driversWithProblems != value) { _driversWithProblems = value; OnPropertyChanged(); } }
+        }
+
         private string _processSearchText = string.Empty;
         public string ProcessSearchText
         {
@@ -571,11 +609,11 @@ namespace WassControlSys.ViewModels
         private ObservableCollection<ProcessInfoDto> _allProcesses = new();
         private ObservableCollection<ProcessInfoDto> _filteredProcesses = new();
 
-        private async Task LoadProcessesAsync()
+        private async Task LoadProcessesAsync(bool silent = false)
         {
             try
             {
-                IsBusy = true;
+                if (!silent) IsBusy = true;
                 var list = await _processManagerService.GetProcessesAsync();
                 _allProcesses = new ObservableCollection<ProcessInfoDto>(list);
                 FilterProcesses();
@@ -584,11 +622,11 @@ namespace WassControlSys.ViewModels
             catch (Exception ex)
             {
                 _log?.Error("Error cargando procesos", ex);
-                await _dialogService.ShowMessage($"Error cargando procesos: {ex.Message}", "Error");
+                if (!silent) await _dialogService.ShowMessage($"Error cargando procesos: {ex.Message}", "Error");
             }
             finally
             {
-                IsBusy = false;
+                if (!silent) IsBusy = false;
             }
         }
 
@@ -722,6 +760,40 @@ namespace WassControlSys.ViewModels
             }
         }
 
+        private async Task LoadDriversWithProblemsAsync()
+        {
+            try
+            {
+                IsBusy = true;
+                var drivers = await _driverService.GetDriversWithProblemsAsync();
+                DriversWithProblems = new ObservableCollection<DriverInfo>(drivers);
+            }
+            catch (Exception ex)
+            {
+                _log?.Error("Error cargando drivers con problemas", ex);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private void ExecuteOpenFolder(string? filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) return;
+            try
+            {
+                // Si es un archivo, abrimos la carpeta y lo seleccionamos. 
+                // Si es un directorio, simplemente lo abrimos.
+                string argument = File.Exists(filePath) ? $"/select,\"{filePath}\"" : $"\"{filePath}\"";
+                Process.Start("explorer.exe", argument);
+            }
+            catch (Exception ex)
+            {
+                _log?.Error($"Error al abrir ubicación: {filePath}", ex);
+            }
+        }
+
         private bool _cleanRecycleBin = true;
         public bool CleanRecycleBin
         {
@@ -803,6 +875,14 @@ namespace WassControlSys.ViewModels
             set { if (_autoOptimizeRam != value) { _autoOptimizeRam = value; OnPropertyChanged(); _ = SaveSettingsAsync(); } }
         }
 
+        private bool _minimizeToTray;
+        public bool MinimizeToTray
+        {
+            get => _minimizeToTray;
+            set { if (_minimizeToTray != value) { _minimizeToTray = value; OnPropertyChanged(); _ = SaveSettingsAsync(); } }
+        }
+
+
         private double _ramThresholdPercent = 85;
         public double RamThresholdPercent
         {
@@ -837,6 +917,8 @@ namespace WassControlSys.ViewModels
         public ICommand StartServiceCommand { get; private set; }
         public ICommand StopServiceCommand { get; private set; }
         public ICommand RefreshServicesCommand { get; private set; }
+        public ICommand RefreshDriversCommand { get; private set; }
+        public ICommand OpenFolderCommand { get; private set; }
         public ICommand UninstallBloatwareAppCommand { get; private set; }
         public ICommand RefreshBloatwareAppsCommand { get; private set; }
         public ICommand UpdatePrivacySettingCommand { get; private set; }
@@ -863,6 +945,10 @@ namespace WassControlSys.ViewModels
         public ICommand ToggleServiceCommand { get; private set; }
         public ICommand FreeUpDiskSpaceCommand { get; private set; }
         public ICommand PcBoostCommand { get; private set; }
+        public ICommand DeepScanCommand { get; private set; }
+        public ICommand OpenCleanmgrCommand { get; private set; }
+        public ICommand RunToolCommand { get; private set; }
+
 
 
         // Método que se ejecuta cuando se invoca el comando CleanTempFilesCommand
@@ -899,6 +985,19 @@ namespace WassControlSys.ViewModels
 
         }
 
+        private void ExecuteOpenCleanmgr()
+        {
+            try
+            {
+                Process.Start("cleanmgr.exe");
+                _log?.Info("Liberador de espacio iniciado.");
+            }
+            catch (Exception ex)
+            {
+                _log?.Error("Error al iniciar cleanmgr", ex);
+            }
+        }
+
         private async Task ExecutePcBoostAsync()
         {
             if (IsBusy) return;
@@ -908,12 +1007,34 @@ namespace WassControlSys.ViewModels
                 StatusMessage = "Iniciando PC Boost...";
                 _log?.Info("PC Boost iniciado por el usuario.");
 
-                // Placeholder for now
-                await Task.Delay(2000); // Simulate work
+                // 1. Optimizar Memoria
+                StatusMessage = "Optimizando memoria RAM...";
+                await _maintenance.OptimizeMemoryAsync();
+                await Task.Delay(500); // Pequeña pausa para feedback visual
 
-                GeneralStatusMessage = "Estado General: ¡Optimizado!";
-                StatusMessage = "PC Boost completado.";
-                await _dialogService.ShowMessage("El sistema ha sido optimizado.", "PC Boost Finalizado");
+                // 2. Limpiar Archivos Temporales (Opciones estándar)
+                StatusMessage = "Limpiando archivos temporales...";
+                var options = new CleaningOptions 
+                { 
+                    CleanSystemTemp = true, 
+                    CleanRecycleBin = true, 
+                    CleanBrowserCache = true 
+                };
+                await _maintenance.CleanTemporaryFilesAsync(options);
+                await Task.Delay(500);
+
+                // 3. Reducir procesos en segundo plano
+                StatusMessage = "Reduciendo procesos innecesarios...";
+                await _processManagerService.ReduceBackgroundProcessesAsync(System.Diagnostics.ProcessPriorityClass.BelowNormal);
+
+                GeneralStatusMessage = "Estado General: ¡Sistema Optimizado!";
+                StatusMessage = "PC Boost completado con éxito.";
+                
+                // Recargar info para reflejar cambios si es necesario
+                _ = UpdateThermalAsync();
+                UpdateSystemUsage();
+
+                await _dialogService.ShowMessage("El sistema ha sido optimizado correctamente:\n- Memoria RAM liberada.\n- Archivos temporales eliminados.\n- Procesos de fondo ajustados.", "PC Boost Finalizado");
             }
             catch (Exception ex)
             {
@@ -926,6 +1047,55 @@ namespace WassControlSys.ViewModels
                 StatusMessage = "";
             }
         }
+
+        private async Task ExecuteDeepScanAsync()
+        {
+            if (IsBusy) return;
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Iniciando Escaneo Profundo...";
+                DeepScanResult.Clear();
+
+                // Escanear carpeta Descargas
+                string downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                if (Directory.Exists(downloadsPath))
+                {
+                    StatusMessage = "Escaneando carpeta de Descargas...";
+                    var largeFiles = await _diskAnalyzerService.FindLargeFilesAsync(downloadsPath, 50 * 1024 * 1024); // > 50MB
+                    foreach (var file in largeFiles)
+                    {
+                        DeepScanResult.Add(file);
+                    }
+                }
+
+                // Escanear Escritorio por archivos grandes
+                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                if (Directory.Exists(desktopPath))
+                {
+                    StatusMessage = "Escaneando Escritorio...";
+                    var largeFiles = await _diskAnalyzerService.FindLargeFilesAsync(desktopPath, 100 * 1024 * 1024); // > 100MB
+                    foreach (var file in largeFiles)
+                    {
+                        DeepScanResult.Add(file);
+                    }
+                }
+
+                StatusMessage = "Análisis completado.";
+                await _dialogService.ShowMessage($"Escaneo profundo finalizado. Se encontraron {DeepScanResult.Count} archivos grandes.", "Limpieza Profunda");
+            }
+            catch (Exception ex)
+            {
+                _log?.Error("Error durante Escaneo Profundo", ex);
+                await _dialogService.ShowMessage($"Error: {ex.Message}", "Error");
+            }
+            finally
+            {
+                IsBusy = false;
+                StatusMessage = "";
+            }
+        }
+
 
         private async Task ExecuteOptimizeRamAsync()
         {
@@ -1005,7 +1175,7 @@ namespace WassControlSys.ViewModels
 
         public ICommand NavigateCommand { get; private set; }
 
-        private async void ExecuteNavigate(object? parameter)
+        private void ExecuteNavigate(object? parameter)
         {
             if (parameter == null) return;
             AppSection target;
@@ -1019,23 +1189,38 @@ namespace WassControlSys.ViewModels
             switch (target)
             {
                 case AppSection.Dashboard:
-                    if (BatteryInfo == null) _ = LoadBatteryInfoAsync();
+                    _ = LoadSecurityStatusAsync();
+                    _ = LoadStartupItemsAsync();
+                    _ = LoadBatteryInfoAsync();
+                    break;
+                case AppSection.Proteccion:
+                    _ = LoadSecurityStatusAsync();
+                    break;
+                case AppSection.Almacenamiento:
+                    // Carga info de discos si es necesario
                     break;
                 case AppSection.Rendimiento:
                     if (Processes == null || Processes.Count == 0) _ = LoadProcessesAsync();
                     _ = UpdateThermalAsync();
                     if (WindowsServices == null || WindowsServices.Count == 0) _ = LoadWindowsServicesAsync();
-                    if (StartupItems == null || StartupItems.Count == 0) _ = LoadStartupItemsAsync();
                     break;
                 case AppSection.Aplicaciones:
                     if (BloatwareApps == null || BloatwareApps.Count == 0) _ = LoadBloatwareAppsAsync();
                     _ = LoadUpdatableAppsAsync();
+                    if (StartupItems == null || StartupItems.Count == 0) _ = LoadStartupItemsAsync();
+                    break;
+                case AppSection.Herramientas:
+                    _ = LoadLastRestorePointAsync();
                     break;
                 case AppSection.Hardware:
                     if (string.IsNullOrWhiteSpace(SystemInformation?.MachineName)) _ = LoadSystemInfoAsync();
                     if (DiskHealth == null || DiskHealth.Count == 0) _ = LoadDiskHealthAsync();
                     if (PrivacySettings == null || PrivacySettings.Count == 0) _ = LoadPrivacySettingsAsync();
                     if (string.IsNullOrWhiteSpace(SecurityStatus?.AntivirusName)) _ = LoadSecurityStatusAsync();
+                    if (DriversWithProblems == null || DriversWithProblems.Count == 0) _ = LoadDriversWithProblemsAsync();
+                    break;
+                case AppSection.Configuracion:
+                    // Seccion de ajustes, no requiere carga inicial especial
                     break;
             }
         }

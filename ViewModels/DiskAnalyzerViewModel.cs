@@ -23,6 +23,14 @@ namespace WassControlSys.ViewModels
             set { _analysisResult = value; OnPropertyChanged(); }
         }
 
+        private ObservableCollection<FolderSizeInfo> _largeFilesResult = new();
+        public ObservableCollection<FolderSizeInfo> LargeFilesResult
+        {
+            get => _largeFilesResult;
+            set { _largeFilesResult = value; OnPropertyChanged(); }
+        }
+
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

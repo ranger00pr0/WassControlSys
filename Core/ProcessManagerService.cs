@@ -31,7 +31,8 @@ namespace WassControlSys.Core
                             Name = p.ProcessName,
                             Priority = p.PriorityClass,
                             WorkingSetMb = p.WorkingSet64 / (1024.0 * 1024.0),
-                            StartTime = SafeStartTime(p)
+                            StartTime = SafeStartTime(p),
+                            IsForeground = !string.IsNullOrEmpty(p.MainWindowTitle) || p.MainWindowHandle != IntPtr.Zero
                         };
                         list.Add(info);
                     }

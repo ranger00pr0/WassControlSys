@@ -14,6 +14,64 @@
         <TextBlock Grid.Row="0" Text="Gestión de Aplicaciones" Style="{StaticResource HeaderTextStyle}"/>
 
         <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
+            <!-- Gestor de Inicio -->
+            <TabItem Header="Gestor de Inicio">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
+                    <Grid>
+                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Button Grid.Row="0" Content="Refrescar Lista" Command="{Binding RefreshStartupItemsCommand}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding StartupItems}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False"
+                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Aplicación" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="Ruta" Binding="{Binding Command}" Width="*"/>
+                                <DataGridTextColumn Header="Impacto" Binding="{Binding ImpactScore, StringFormat={}{0:F1}}" Width="80"/>
+                                <DataGridTemplateColumn Header="Estado" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Habilitar" Command="{Binding DataContext.EnableStartupItemCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,2" Margin="0,0,5,0"/>
+                                                <Button Content="Deshabilitar" Command="{Binding DataContext.DisableStartupItemCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, Converter={StaticResource BooleanToVisibilityConverter}}" Style="{StaticResource DangerButtonStyle}" Padding="10,2"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- Desinstalador -->
+            <TabItem Header="Desinstalador (Bloatware)">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Button Grid.Row="0" Content="Refrescar Lista" Command="{Binding RefreshBloatwareAppsCommand}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding BloatwareApps}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False"
+                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="Editor" Binding="{Binding Publisher}" Width="150"/>
+                                <DataGridTemplateColumn Header="Acción" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Eliminar" Command="{Binding DataContext.UninstallBloatwareAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource DangerButtonStyle}" Padding="10,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </TabItem>
+
             <!-- Actualizaciones -->
             <TabItem Header="Actualizaciones (Winget)">
                 <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
@@ -52,33 +110,6 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Content="Actualizar" Command="{Binding DataContext.UpdateAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding Id}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,2"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </Border>
-            </TabItem>
-
-            <!-- Desinstalador -->
-            <TabItem Header="Desinstalador (Bloatware)">
-                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <Button Grid.Row="0" Content="Refrescar Lista" Command="{Binding RefreshBloatwareAppsCommand}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" Margin="0,0,0,10"/>
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding BloatwareApps}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False"
-                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
-                                <DataGridTextColumn Header="Editor" Binding="{Binding Publisher}" Width="150"/>
-                                <DataGridTemplateColumn Header="Acción" Width="100">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Content="Eliminar" Command="{Binding DataContext.UninstallBloatwareAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource DangerButtonStyle}" Padding="10,2"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

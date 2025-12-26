@@ -5,205 +5,294 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="800">
-    <Grid Margin="10">
+    <Grid Style="{StaticResource AnimatedViewStyle}" Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Hardware y Privacidad" Style="{StaticResource HeaderTextStyle}"/>
+        <StackPanel Grid.Row="0" Margin="0,0,0,30">
+            <TextBlock Text="Hardware y Privacidad" Style="{StaticResource HeaderTextStyle}"/>
+            <TextBlock Text="Información técnica del sistema y control de privacidad" Style="{StaticResource SubHeaderTextStyle}"/>
+        </StackPanel>
 
         <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
             <!-- Información General -->
             <TabItem Header="Información General">
-                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
+                <ScrollViewer Margin="0,15,0,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto" MinWidth="250"/>
+                            <ColumnDefinition Width="300"/>
                         </Grid.ColumnDefinitions>
                         
-                        <ScrollViewer Grid.Column="0">
-                            <StackPanel>
-                                <TextBlock Text="Especificaciones Técnicas" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
-                                <ItemsControl ItemsSource="{Binding SystemInformation.GeneralItems}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="0,5">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="150"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding Key}" Foreground="{DynamicResource SecondaryTextBrush}"/>
-                                                <TextBlock Text="{Binding Value}" Grid.Column="1" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                
-                                <Button Content="Exportar Backup de Drivers" Command="{Binding ExportDriversCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,20,0,0" HorizontalAlignment="Left"/>
-                                
-                                <StackPanel Visibility="{Binding IsExportingDrivers, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,15,0,0">
-                                    <TextBlock Text="{Binding DriverExportStatusMessage}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,5"/>
-                                    <ProgressBar Value="{Binding DriverExportProgress}" Maximum="100" Height="8"/>
+                        <StackPanel Grid.Column="0">
+                            <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,15,15">
+                                <StackPanel>
+                                    <TextBlock Text="Especificaciones Técnicas" FontSize="18" FontWeight="Bold" Margin="0,0,0,20" Foreground="{DynamicResource PrimaryBrush}"/>
+                                    <ItemsControl ItemsSource="{Binding SystemInformation.GeneralItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="150"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Key}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="13"/>
+                                                    <TextBlock Text="{Binding Value}" Grid.Column="1" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" TextWrapping="Wrap" FontSize="13"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    
+                                    <Separator Background="#333" Margin="0,20"/>
+                                    
+                                    <Button Content="📦 Exportar Backup de Drivers" Command="{Binding ExportDriversCommand}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left"/>
+                                    
+                                    <StackPanel Visibility="{Binding IsExportingDrivers, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,15,0,0">
+                                        <TextBlock Text="{Binding DriverExportStatusMessage}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,5" FontSize="12"/>
+                                        <ProgressBar Value="{Binding DriverExportProgress}" Maximum="100" Height="8" Foreground="{DynamicResource PrimaryBrush}"/>
+                                    </StackPanel>
                                 </StackPanel>
-                            </StackPanel>
-                        </ScrollViewer>
+                            </Border>
+                        </StackPanel>
 
-                        <!-- Panel Lateral de Seguridad -->
-                        <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource SecondaryTextBrush}" BorderThickness="1" CornerRadius="12" Padding="15" Margin="15,0,0,0">
-                            <StackPanel>
-                                <TextBlock Text="Seguridad" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <TextBlock Text="Antivirus:" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0"/>
-                                <TextBlock Text="{Binding SecurityStatus.Antivirus}" Foreground="{DynamicResource TextBrush}" FontWeight="Bold"/>
-                                <Separator Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="0,10"/>
-                                <TextBlock Text="Firewall:" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0"/>
-                                <TextBlock Text="{Binding SecurityStatus.Firewall}" Foreground="{DynamicResource TextBrush}" FontWeight="Bold"/>
-                                <Separator Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="0,10"/>
-                                <TextBlock Text="Windows Update:" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0"/>
-                                <TextBlock Text="{Binding SecurityStatus.WindowsUpdate}" Foreground="{DynamicResource TextBrush}" FontWeight="Bold"/>
-                            </StackPanel>
-                        </Border>
+                        <!-- Panel Lateral: Seguridad Resumida -->
+                        <StackPanel Grid.Column="1">
+                            <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="Estado de Seguridad" FontSize="16" FontWeight="Bold" Margin="0,0,0,15" Foreground="White"/>
+                                    
+                                    <Grid Margin="0,5">
+                                        <TextBlock Text="Antivirus" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding SecurityStatus.Antivirus}" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Right" FontWeight="Bold" FontSize="12"/>
+                                    </Grid>
+                                    <Grid Margin="0,5">
+                                        <TextBlock Text="Firewall" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding SecurityStatus.Firewall}" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Right" FontWeight="Bold" FontSize="12"/>
+                                    </Grid>
+                                    <Grid Margin="0,5">
+                                        <TextBlock Text="Update" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12"/>
+                                        <TextBlock Text="{Binding SecurityStatus.WindowsUpdate}" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Right" FontWeight="Bold" FontSize="12"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource AnimatedCardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Acción Rápida" FontSize="16" FontWeight="Bold" Margin="0,0,0,15" Foreground="White"/>
+                                    <Button Content="Abrir Información del Sistema (msinfo32)" Command="{Binding RunToolCommand}" CommandParameter="msinfo32" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,0,10"/>
+                                    <Button Content="Administrador de Dispositivos" Command="{Binding RunToolCommand}" CommandParameter="devmgmt.msc" Style="{StaticResource SecondaryButtonStyle}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </Grid>
-                </Border>
+                </ScrollViewer>
             </TabItem>
 
             <!-- Discos -->
-            <TabItem Header="Discos">
-                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
-                    <ScrollViewer>
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
-                            <!-- Sección Superior: Lista de Discos -->
-                            <StackPanel Grid.Row="0">
+            <TabItem Header="Almacenamiento y Discos">
+                <ScrollViewer Margin="0,15,0,0">
+                    <StackPanel>
+                        <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,20">
+                            <StackPanel>
                                 <Grid Margin="0,0,0,15">
-                                    <TextBlock Text="Información de Discos" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Unidades Detectadas" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <ComboBox ItemsSource="{Binding DiskAnalyzers}" DisplayMemberPath="DriveLetter" SelectedItem="{Binding SelectedDriveForCleanup, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,10,0" Width="100"/>
-                                        <Button Content="Liberar Espacio" Command="{Binding FreeUpDiskSpaceCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="15,5"/>
-                                        <Button Content="Actualizar" Command="{Binding RefreshDiskHealthCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="15,5" Margin="10,0,0,0"/>
+                                        <Button Content="🔄 Actualizar" Command="{Binding RefreshDiskHealthCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0"/>
                                     </StackPanel>
                                 </Grid>
                                 
-                                <DataGrid ItemsSource="{Binding DiskHealth}" 
-                                          AutoGenerateColumns="False" 
-                                          Background="Transparent" 
-                                          Foreground="{DynamicResource TextBrush}" 
-                                          BorderThickness="0" 
-                                          CanUserAddRows="False"
-                                          HeadersVisibility="Column"
-                                          GridLinesVisibility="Horizontal"
-                                          RowBackground="{DynamicResource SurfaceBrush}"
-                                          AlternatingRowBackground="{DynamicResource WindowBackgroundBrush}"
-                                          Margin="0,0,0,20">
+                                <DataGrid ItemsSource="{Binding DiskHealth}" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Disco" Binding="{Binding DeviceId}" Width="150"/>
+                                        <DataGridTextColumn Header="Disco" Binding="{Binding DeviceId}" Width="100"/>
                                         <DataGridTextColumn Header="Modelo" Binding="{Binding Model}" Width="2*"/>
-                                        <DataGridTextColumn Header="Capacidad" Binding="{Binding Capacity}" Width="150"/>
-                                        <DataGridTemplateColumn Header="SMART" Width="100">
+                                        <DataGridTextColumn Header="Capacidad" Binding="{Binding Capacity}" Width="120"/>
+                                        <DataGridTemplateColumn Header="Salud SMART" Width="120">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock FontWeight="Bold" HorizontalAlignment="Center">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-                                                                <Setter Property="Text" Value="{Binding SmartStatus}"/>
+                                                    <Border Padding="8,4" CornerRadius="4" HorizontalAlignment="Left">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#1A1A1A"/>
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding SmartOk}" Value="True">
-                                                                        <Setter Property="Foreground" Value="#10B981"/>
-                                                                        <Setter Property="Text" Value="✓ OK"/>
+                                                                        <Setter Property="Background" Value="#102010"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding SmartOk}" Value="False">
-                                                                        <Setter Property="Foreground" Value="#EF4444"/>
-                                                                        <Setter Property="Text" Value="✗ Error"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding SmartStatusKnown}" Value="False">
-                                                                        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
-                                                                        <Setter Property="Text" Value="{Binding SmartStatus}"/>
+                                                                        <Setter Property="Background" Value="#251010"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
+                                                        </Border.Style>
+                                                        <TextBlock FontWeight="Bold" FontSize="11">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="#888"/>
+                                                                    <Setter Property="Text" Value="{Binding SmartStatus}"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding SmartOk}" Value="True">
+                                                                            <Setter Property="Foreground" Value="#10B981"/>
+                                                                            <Setter Property="Text" Value="Saludable"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding SmartOk}" Value="False">
+                                                                            <Setter Property="Foreground" Value="#EF4444"/>
+                                                                            <Setter Property="Text" Value="Atención"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </StackPanel>
+                        </Border>
 
-                            <!-- Sección Inferior: Analizadores de Espacio -->
-                            <ItemsControl Grid.Row="1" ItemsSource="{Binding DiskAnalyzers}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="8" Padding="15" Margin="0,0,10,10" MinWidth="300">
-                                            <StackPanel>
-                                                <TextBlock Text="Analizador de Espacio" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
-                                                <Button Content="{Binding DriveLetter, StringFormat='Analizar {0}'}" 
+                        <TextBlock Text="Analizador de Ocupación" FontSize="18" FontWeight="Bold" Margin="0,10,0,15" Foreground="White"/>
+                        
+                        <ItemsControl ItemsSource="{Binding DiskAnalyzers}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5">
+                                        <StackPanel>
+                                            <Grid Margin="0,0,0,15">
+                                                <TextBlock Text="{Binding DriveLetter, StringFormat='Unidad {0}'}" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                                                <Button Content="🔍 Analizar" 
                                                         Command="{Binding DataContext.AnalyzeDiskSpaceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                                         CommandParameter="{Binding DriveLetter}" 
-                                                        Style="{StaticResource SecondaryButtonStyle}" 
-                                                        HorizontalAlignment="Left" 
-                                                        Margin="0,0,0,10"/>
-                                                <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                                                        Style="{StaticResource PrimaryButtonStyle}" 
+                                                        HorizontalAlignment="Right" Padding="10,5"/>
+                                            </Grid>
+                                            
+                                            <ScrollViewer MaxHeight="200">
+                                                <StackPanel>
                                                     <ItemsControl ItemsSource="{Binding AnalysisResult}">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel Margin="0,5">
                                                                     <Grid>
-                                                                        <TextBlock Text="{Binding Path}" Foreground="{DynamicResource TextBrush}" FontSize="12"/>
-                                                                        <TextBlock Text="{Binding FormattedSize}" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Right" FontSize="12"/>
+                                                                        <TextBlock Text="{Binding Path}" Foreground="#888" FontSize="11" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="180" HorizontalAlignment="Left"/>
+                                                                        <TextBlock Text="{Binding FormattedSize}" Foreground="White" HorizontalAlignment="Right" FontSize="11" FontWeight="SemiBold"/>
                                                                     </Grid>
-                                                                    <ProgressBar Value="{Binding Percentage}" Maximum="100" Height="6" Margin="0,4,0,0" Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource AccentBrush}" BorderThickness="0"/>
+                                                                    <ProgressBar Value="{Binding Percentage}" Maximum="100" Height="4" Margin="0,4,0,0" Foreground="{DynamicResource PrimaryBrush}"/>
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
-                                                </ScrollViewer>
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Grid>
-                    </ScrollViewer>
-                </Border>
-            </TabItem>
-
-            <!-- Privacidad -->
-            <TabItem Header="Privacidad">
-                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="20">
-                    <ScrollViewer>
-                        <ItemsControl ItemsSource="{Binding PrivacySettings}">
-                            <ItemsControl.ItemTemplate>
-                                 <DataTemplate>
-                                    <Border BorderBrush="{DynamicResource SecondaryTextBrush}" Opacity="0.2" BorderThickness="0,0,0,1" Padding="10">
-                                        <Grid>
-                                            <StackPanel Margin="0,0,100,0">
-                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontWeight="Bold"/>
-                                                <TextBlock Text="{Binding Description}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" TextWrapping="Wrap"/>
-                                            </StackPanel>
-                                            <ToggleButton HorizontalAlignment="Right" VerticalAlignment="Center" 
-                                                          IsChecked="{Binding IsEnabled}"
-                                                          Command="{Binding DataContext.UpdatePrivacySettingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                          CommandParameter="{Binding}"
-                                                          Style="{StaticResource ToggleSwitchStyle}"/>
-                                        </Grid>
+                                                    <TextBlock Text="No hay datos. Inicie el análisis." Foreground="#555" FontSize="12" HorizontalAlignment="Center" Margin="0,20"
+                                                               Visibility="{Binding AnalysisResult.Count, Converter={StaticResource InvertedIntToVisibilityConverter}}"/>
+                                                </StackPanel>
+                                            </ScrollViewer>
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                    </ScrollViewer>
-                </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Controladores -->
+            <TabItem Header="Controladores y Dispositivos">
+                <ScrollViewer Margin="0,15,0,0">
+                    <StackPanel>
+                        <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,20">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,15">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Estado de los Controladores" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+                                    <Button Grid.Column="1" Content="🔄 Re-escanear" Command="{Binding RefreshDriversCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="15,5"/>
+                                </Grid>
+
+                                <TextBlock Text="Los siguientes dispositivos han reportado errores o faltan sus controladores:" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,20"/>
+
+                                <ItemsControl ItemsSource="{Binding DriversWithProblems}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#1A1A1A" CornerRadius="8" Margin="0,0,0,10" Padding="15" BorderBrush="#333" BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Background="#2A2A2A" Width="40" Height="40" CornerRadius="20" Margin="0,0,15,0">
+                                                        <TextBlock Text="⚠️" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="Bold" FontSize="14" TextWrapping="Wrap"/>
+                                                        <TextBlock Text="{Binding ErrorDescription}" Foreground="#FF6B6B" FontSize="12" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                                                        <TextBlock Text="{Binding DeviceId}" Foreground="#555" FontSize="10" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Border Background="#1A1A1A" CornerRadius="8" Padding="30" Margin="0,10"
+                                        Visibility="{Binding DriversWithProblems.Count, Converter={StaticResource InvertedIntToVisibilityConverter}}">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="✅" FontSize="40" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Todos los controladores funcionan correctamente" Foreground="White" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="No se detectaron errores de hardware en el sistema." Foreground="#666" FontSize="13" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource AnimatedCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Mantenimiento de Hardware" FontSize="16" FontWeight="Bold" Margin="0,0,0,15" Foreground="White"/>
+                                <TextBlock Text="Para solucionar errores de controladores, intente actualizar a través de Windows Update o el sitio del fabricante." Foreground="#888" FontSize="13" Margin="0,0,0,20" TextWrapping="Wrap"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Abrir Windows Update" Command="{Binding RunToolCommand}" CommandParameter="ms-settings:windowsupdate" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Padding="20,5"/>
+                                    <Button Content="Administrador de Dispositivos" Command="{Binding RunToolCommand}" CommandParameter="devmgmt.msc" Style="{StaticResource SecondaryButtonStyle}" Padding="20,5"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Privacidad -->
+            <TabItem Header="Control de Privacidad">
+                <ScrollViewer Margin="0,15,0,0">
+                    <StackPanel>
+                        <Border Style="{StaticResource AnimatedCardStyle}" Padding="0">
+                            <ItemsControl ItemsSource="{Binding PrivacySettings}">
+                                <ItemsControl.ItemTemplate>
+                                     <DataTemplate>
+                                        <Border BorderBrush="#222" BorderThickness="0,0,0,1" Padding="20">
+                                            <Grid>
+                                                <StackPanel Margin="0,0,100,0">
+                                                    <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                                                    <TextBlock Text="{Binding Description}" Foreground="#888" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                                                </StackPanel>
+                                                <ToggleButton HorizontalAlignment="Right" VerticalAlignment="Center" 
+                                                              IsChecked="{Binding IsEnabled}"
+                                                              Command="{Binding DataContext.UpdatePrivacySettingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}"
+                                                              Style="{StaticResource ToggleSwitchStyle}"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
         </TabControl>
     </Grid>

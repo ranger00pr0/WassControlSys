@@ -7,5 +7,7 @@ namespace WassControlSys.Core
     public interface IDiskAnalyzerService
     {
         Task<IEnumerable<FolderSizeInfo>> AnalyzeDirectoryAsync(string path);
+        Task<IEnumerable<FolderSizeInfo>> FindLargeFilesAsync(string path, long minSizeInBytes);
+
     }
 }

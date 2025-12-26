@@ -3,10 +3,12 @@ namespace WassControlSys.Models
     public enum AppSection
     {
         Dashboard,
-        Mantenimiento,
+        Proteccion,
+        Almacenamiento,
         Rendimiento,
         Aplicaciones,
         Hardware,
+        Herramientas,
         Configuracion
     }
 }

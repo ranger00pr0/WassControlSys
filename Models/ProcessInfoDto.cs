@@ -10,6 +10,7 @@ namespace WassControlSys.Models
         public ProcessPriorityClass Priority { get; set; }
         public double WorkingSetMb { get; set; }
         public DateTime? StartTime { get; set; }
+        public bool IsForeground { get; set; }
     }
 
     public class ProcessImpactStats

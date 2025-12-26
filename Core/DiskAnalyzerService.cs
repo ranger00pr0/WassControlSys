@@ -74,7 +74,42 @@ namespace WassControlSys.Core
             });
         }
 
+        public async Task<IEnumerable<FolderSizeInfo>> FindLargeFilesAsync(string path, long minSizeInBytes)
+        {
+            return await Task.Run(() =>
+            {
+                var result = new List<FolderSizeInfo>();
+                try
+                {
+                    if (!Directory.Exists(path)) return result;
+
+                    var di = new DirectoryInfo(path);
+                    // Usar recursividad para buscar archivos grandes en todas las subcarpetas
+                    var files = di.EnumerateFiles("*", SearchOption.AllDirectories)
+                                  .Where(f => f.Length >= minSizeInBytes)
+                                  .OrderByDescending(f => f.Length)
+                                  .Take(50); // Limitar a los 50 más grandes para rendimiento
+
+                    foreach (var file in files)
+                    {
+                        result.Add(new FolderSizeInfo
+                        {
+                            Path = file.FullName,
+                            SizeBytes = file.Length,
+                            FormattedSize = FormatSize(file.Length)
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error($"Error buscando archivos grandes en {path}", ex);
+                }
+                return result;
+            });
+        }
+
         private long GetDirectorySize(DirectoryInfo di)
+
         {
             long size = 0;
             try

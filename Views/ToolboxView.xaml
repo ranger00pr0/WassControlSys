@@ -1,0 +1,111 @@
+<UserControl x:Class="WassControlSys.Views.ToolboxView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid Style="{StaticResource AnimatedViewStyle}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
+                <TextBlock Text="Caja de Herramientas" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,30"/>
+                
+                <TextBlock Text="Utilidades del Sistema" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                <UniformGrid Columns="4" HorizontalAlignment="Left">
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="160">
+                        <StackPanel>
+                            <TextBlock Text="💻 CMD" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="cmd.exe" Content="Ejecutar" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="160">
+                        <StackPanel>
+                            <TextBlock Text="🟦 PowerShell" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="powershell.exe" Content="Ejecutar" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="160">
+                        <StackPanel>
+                            <TextBlock Text="📝 Registro" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="regedit.exe" Content="Abrir" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="160">
+                        <StackPanel>
+                            <TextBlock Text="⚙️ Servicios" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="services.msc" Content="Abrir" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <TextBlock Text="Optimización y Configuración" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,30,0,15"/>
+                <UniformGrid Columns="4" HorizontalAlignment="Left">
+                     <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="160">
+                        <StackPanel>
+                            <TextBlock Text="🛠️ msconfig" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="msconfig.exe" Content="Abrir" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="160">
+                        <StackPanel>
+                            <TextBlock Text="🛡️ gpedit" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="gpedit.msc" Content="Abrir" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="160">
+                        <StackPanel>
+                            <TextBlock Text="🎮 dxdiag" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="dxdiag.exe" Content="Abrir" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="160">
+                        <StackPanel>
+                            <TextBlock Text="📦 AppWiz" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="appwiz.cpl" Content="Programas" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <TextBlock Text="Diagnóstico Avanzado" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,30,0,15"/>
+                <UniformGrid Columns="3" HorizontalAlignment="Left">
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="218">
+                        <StackPanel>
+                            <TextBlock Text="📈 Monitor de Recursos" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="resmon.exe" Content="Abrir Monitor" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="218">
+                        <StackPanel>
+                            <TextBlock Text="📅 Visor de Eventos" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="eventvwr.msc" Content="Abrir Visor" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="218">
+                        <StackPanel>
+                            <TextBlock Text="🖥️ Control de Energía" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="powercfg.cpl" Content="Planes Energía" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <Border Style="{StaticResource AnimatedCardStyle}" Margin="5,30,5,5" Width="680" HorizontalAlignment="Left">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="🛡️ Gestor de Puntos de Restauración" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                <TextBlock Text="Último punto detectado: " Foreground="#888" FontSize="13"/>
+                                <TextBlock Text="{Binding LastRestorePointName}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold" FontSize="13"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding LastRestorePointDate, StringFormat='Fecha de creación: {0}'}" Foreground="#666" FontSize="12"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Command="{Binding CreateRestorePointCommand}" Content="🛡️ CREAR PUNTO AHORA" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" Padding="25,12" FontWeight="Bold"/>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

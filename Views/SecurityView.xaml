@@ -6,76 +6,89 @@
              xmlns:core="clr-namespace:WassControlSys.Core"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <StackPanel Margin="0,0,0,0">
-        <TextBlock Text="Módulo de Seguridad" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,30"/>
+    <Grid Style="{StaticResource AnimatedViewStyle}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
+                <TextBlock Text="Panel de Protección" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,30"/>
+                
+                <Border Style="{StaticResource AnimatedCardStyle}" HorizontalAlignment="Left" MinWidth="500">
+                   <StackPanel>
+                      <TextBlock Text="Estado de Seguridad" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
+                      
+                      <!-- Antivirus -->
+                      <Grid Margin="0,0,0,20">
+                          <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="*"/>
+                              <ColumnDefinition Width="Auto"/>
+                          </Grid.ColumnDefinitions>
+                          <StackPanel Grid.Column="0">
+                              <TextBlock Text="Software Antivirus" Foreground="#888" FontSize="14"/>
+                              <TextBlock Text="{Binding SecurityStatus.AntivirusName}" Foreground="White" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                          </StackPanel>
+                           <Border Grid.Column="1" Background="#10B981" CornerRadius="4" Padding="8,4" VerticalAlignment="Center" Visibility="{Binding SecurityStatus.IsAntivirusEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                               <TextBlock Text="PROTEGIDO" FontSize="12" FontWeight="Bold" Foreground="White"/>
+                           </Border>
+                           <Border Grid.Column="1" Background="#EF4444" CornerRadius="4" Padding="8,4" VerticalAlignment="Center" Visibility="{Binding SecurityStatus.IsAntivirusEnabled, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
+                               <TextBlock Text="RIESGO" FontSize="12" FontWeight="Bold" Foreground="White"/>
+                           </Border>
+                      </Grid>
         
-        <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="25" HorizontalAlignment="Left" MinWidth="450">
-           <StackPanel>
-              <TextBlock Text="Estado Actual" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
-              
-              <Grid Margin="0,0,0,20">
-                  <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*"/>
-                      <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <StackPanel Grid.Column="0">
-                      <TextBlock Text="Software Antivirus" Foreground="#888" FontSize="14"/>
-                      <TextBlock Text="{Binding SecurityStatus.AntivirusName}" Foreground="White" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                  </StackPanel>
-                   <Border Grid.Column="1" Background="#10B981" CornerRadius="4" Padding="8,4" Visibility="{Binding SecurityStatus.IsAntivirusEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
-                       <TextBlock Text="PROTEGIDO" FontSize="12" FontWeight="Bold" Foreground="White"/>
-                   </Border>
-                   <Border Grid.Column="1" Background="#EF4444" CornerRadius="4" Padding="8,4" Visibility="{Binding SecurityStatus.IsAntivirusEnabled, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
-                       <TextBlock Text="RIESGO" FontSize="12" FontWeight="Bold" Foreground="White"/>
-                   </Border>
-              </Grid>
-
-              <Separator Background="#333" Margin="0,0,0,20"/>
-
-              <Grid Margin="0,0,0,20">
-                  <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*"/>
-                      <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <StackPanel Grid.Column="0">
-                      <TextBlock Text="Firewall de Windows" Foreground="#888" FontSize="14"/>
-                      <TextBlock Text="Protección de Red" Foreground="White" FontSize="16" FontWeight="SemiBold"/>
-                  </StackPanel>
-                  <Border Grid.Column="1" Background="#10B981" CornerRadius="4" Padding="8,4" Visibility="{Binding SecurityStatus.IsFirewallEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
-                       <TextBlock Text="ACTIVO" FontSize="12" FontWeight="Bold" Foreground="White"/>
-                   </Border>
-                   <Border Grid.Column="1" Background="#EF4444" CornerRadius="4" Padding="8,4" Visibility="{Binding SecurityStatus.IsFirewallEnabled, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
-                       <TextBlock Text="OFF" FontSize="12" FontWeight="Bold" Foreground="White"/>
-                   </Border>
-              </Grid>
-
-              <Separator Background="#333" Margin="0,0,0,20"/>
-              
-              <Grid Margin="0,0,0,0">
-                  <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*"/>
-                      <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <StackPanel Grid.Column="0">
-                      <TextBlock Text="Control de Cuentas (UAC)" Foreground="#888" FontSize="14"/>
-                      <TextBlock Text="Prevención de Cambios" Foreground="White" FontSize="16" FontWeight="SemiBold"/>
-                  </StackPanel>
-                  <Border Grid.Column="1" Background="#10B981" CornerRadius="4" Padding="8,4" Visibility="{Binding SecurityStatus.IsUacEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
-                       <TextBlock Text="ACTIVO" FontSize="12" FontWeight="Bold" Foreground="White"/>
-                   </Border>
-                   <Border Grid.Column="1" Background="#F59E0B" CornerRadius="4" Padding="8,4" Visibility="{Binding SecurityStatus.IsUacEnabled, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
-                       <TextBlock Text="OFF" FontSize="12" FontWeight="Bold" Foreground="White"/>
-                   </Border>
-              </Grid>
-          </StackPanel>
-       </Border>
-       
-       <!-- Additional Info / Tips -->
-       <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" HorizontalAlignment="Left" MinWidth="450" Margin="0,20,0,0">
-           <StackPanel>
-               <TextBlock Text="Recomendación" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,10"/>
-               <TextBlock Text="Mantenga siempre activo su antivirus y el firewall. Si Windows Defender está desactivado, asegúrese de tener otra solución de seguridad confiable instalada." Foreground="#AAA" TextWrapping="Wrap"/>
-           </StackPanel>
-       </Border>
-    </StackPanel>
+                      <Separator Background="#333" Margin="0,0,0,20"/>
+        
+                      <!-- Firewall -->
+                      <Grid Margin="0,0,0,20">
+                          <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="*"/>
+                              <ColumnDefinition Width="Auto"/>
+                          </Grid.ColumnDefinitions>
+                          <StackPanel Grid.Column="0">
+                              <TextBlock Text="Firewall de Windows" Foreground="#888" FontSize="14"/>
+                              <TextBlock Text="Seguridad de Red" Foreground="White" FontSize="16" FontWeight="SemiBold"/>
+                          </StackPanel>
+                          <Border Grid.Column="1" Background="#10B981" CornerRadius="4" Padding="8,4" VerticalAlignment="Center" Visibility="{Binding SecurityStatus.IsFirewallEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                               <TextBlock Text="ACTIVO" FontSize="12" FontWeight="Bold" Foreground="White"/>
+                           </Border>
+                           <Border Grid.Column="1" Background="#EF4444" CornerRadius="4" Padding="8,4" VerticalAlignment="Center" Visibility="{Binding SecurityStatus.IsFirewallEnabled, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
+                               <TextBlock Text="OFF" FontSize="12" FontWeight="Bold" Foreground="White"/>
+                           </Border>
+                      </Grid>
+        
+                      <Separator Background="#333" Margin="0,0,0,20"/>
+                      
+                       <!-- Windows Update -->
+                       <Grid Margin="0,0,0,0">
+                           <Grid.ColumnDefinitions>
+                               <ColumnDefinition Width="*"/>
+                               <ColumnDefinition Width="Auto"/>
+                           </Grid.ColumnDefinitions>
+                           <StackPanel Grid.Column="0">
+                               <TextBlock Text="Windows Update" Foreground="#888" FontSize="14"/>
+                               <TextBlock Text="{Binding SecurityStatus.WindowsUpdate}" Foreground="White" FontSize="16" FontWeight="SemiBold"/>
+                           </StackPanel>
+                           <Button Grid.Column="1" Command="{Binding RunToolCommand}" CommandParameter="ms-settings:windowsupdate" Content="Abrir Ajustes" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center"/>
+                       </Grid>
+                   </StackPanel>
+                </Border>
+                
+                <TextBlock Text="Accesos Rápidos de Seguridad" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,30,0,15"/>
+                
+                <UniformGrid Columns="2" HorizontalAlignment="Left" Width="600">
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5">
+                        <StackPanel>
+                            <TextBlock Text="Defender" FontWeight="Bold" Foreground="White" Margin="0,0,0,5"/>
+                            <TextBlock Text="Configurar reglas y exclusiones" FontSize="12" Foreground="#888" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="windowsdefender://" Content="Abrir Defender" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="5">
+                        <StackPanel>
+                            <TextBlock Text="Red" FontWeight="Bold" Foreground="White" Margin="0,0,0,5"/>
+                            <TextBlock Text="Solucionador de problemas" FontSize="12" Foreground="#888" Margin="0,0,0,10"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="msdt.exe -id NetworkDiagnosticsWeb" Content="Diagnosticar" Style="{StaticResource SecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

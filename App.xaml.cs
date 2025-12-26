@@ -130,8 +130,19 @@ namespace WassControlSys
                 _notifyIcon.DoubleClick += (s, e) => ShowMainWindow();
 
                 var contextMenu = new ContextMenuStrip();
-                contextMenu.Items.Add("Restaurar", null, (s, e) => ShowMainWindow());
+                contextMenu.Items.Add("🚀 Optimizar PC", null, (s, e) => (MainWindow?.DataContext as MainViewModel)?.PcBoostCommand.Execute(null));
+                contextMenu.Items.Add("🧹 Limpiar RAM", null, (s, e) => (MainWindow?.DataContext as MainViewModel)?.OptimizeRamCommand.Execute(null));
                 contextMenu.Items.Add("-");
+                
+                var navMenu = new ToolStripMenuItem("Navegar a...");
+                navMenu.DropDownItems.Add("Inicio", null, (s, e) => NavigateToSection("Dashboard"));
+                navMenu.DropDownItems.Add("Protección", null, (s, e) => NavigateToSection("Proteccion"));
+                navMenu.DropDownItems.Add("Rendimiento", null, (s, e) => NavigateToSection("Rendimiento"));
+                navMenu.DropDownItems.Add("Hardware", null, (s, e) => NavigateToSection("Hardware"));
+                contextMenu.Items.Add(navMenu);
+
+                contextMenu.Items.Add("-");
+                contextMenu.Items.Add("Restaurar App", null, (s, e) => ShowMainWindow());
                 contextMenu.Items.Add("Salir", null, (s, e) => ShutdownApp());
                 
                 _notifyIcon.ContextMenuStrip = contextMenu;
@@ -141,6 +152,12 @@ namespace WassControlSys
                 var log = _serviceProvider?.GetService<ILogService>();
                 log?.Error("Error al configurar el icono de bandeja", ex);
             }
+        }
+
+        private void NavigateToSection(string section)
+        {
+            ShowMainWindow();
+            (MainWindow?.DataContext as MainViewModel)?.NavigateCommand.Execute(section);
         }
 
         public void ShowMainWindow()

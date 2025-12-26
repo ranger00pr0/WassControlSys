@@ -29,6 +29,8 @@
             <SolidColorBrush x:Key="SurfaceHoverBrush" Color="{DynamicResource SurfaceHoverColor}"/>
             <Color x:Key="SelectionColor">#403B82F6</Color>
             <SolidColorBrush x:Key="SelectionBrush" Color="{DynamicResource SelectionColor}"/>
+            <SolidColorBrush x:Key="ComboBoxBackgroundBrush" Color="{DynamicResource ComboBoxBackgroundColor}"/>
+            <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="{DynamicResource ComboBoxBorderColor}"/>
 
             <!-- Convertidores -->
             <core:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
@@ -38,6 +40,9 @@
             <core:BooleanToStringConverter x:Key="BooleanToStringConverter"/>
             <core:SectionToIsActiveConverter x:Key="SectionToIsActiveConverter"/>
             <core:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVisibilityConverter"/>
+            <core:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
+            <core:InvertedIntToVisibilityConverter x:Key="InvertedIntToVisibilityConverter"/>
+
 
             <!-- Estilos de DataGrid (Corregir Visibilidad) -->
             <Style TargetType="DataGrid">
@@ -177,6 +182,7 @@
                                     </DataTrigger.Binding>
                                     <Setter TargetName="NavButtonBorder" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
                                     <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
                                 </DataTrigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -304,11 +310,12 @@
 
             <!-- ComboBox Style -->
             <Style TargetType="ComboBox">
-                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource ComboBoxBackgroundBrush}"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="8,5"/>
+                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
             </Style>
 
             <Style TargetType="ComboBoxItem">
@@ -353,6 +360,86 @@
                 </Style.Triggers>
             </Style>
 
+            <!-- Animaciones Globales -->
+            <Storyboard x:Key="FadeInAnimation">
+                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.4">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+
+            <Storyboard x:Key="SlideUpAnimation">
+                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" 
+                                 From="20" To="0" Duration="0:0:0.5">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+
+            <!-- Estilo para Contenedores con Animación de Entrada -->
+            <Style x:Key="AnimatedViewStyle" TargetType="FrameworkElement">
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <TranslateTransform Y="20"/>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Opacity" Value="0"/>
+                <Style.Triggers>
+                    <Trigger Property="Visibility" Value="Visible">
+                        <Trigger.EnterActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="20" To="0" Duration="0:0:0.4">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </Trigger.EnterActions>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Estilo para Tarjetas con Hover Animado -->
+            <Style x:Key="AnimatedCardStyle" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                <Setter Property="CornerRadius" Value="12"/>
+                <Setter Property="Padding" Value="20"/>
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Trigger.EnterActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.02" Duration="0:0:0.2"/>
+                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.02" Duration="0:0:0.2"/>
+                                    <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource SurfaceHoverColor}" Duration="0:0:0.2"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </Trigger.EnterActions>
+                        <Trigger.ExitActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.2"/>
+                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.2"/>
+                                    <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource SurfaceColor}" Duration="0:0:0.2"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </Trigger.ExitActions>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
         </ResourceDictionary>
+
     </Application.Resources>
 </Application>

@@ -5,6 +5,22 @@ Todas las mejoras notables de este proyecto serán documentadas en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.1.6] - 2025-12-25
+
+### Añadido
+
+- **Panel de Comprobación de Mantenimiento (Health Check)**: Se ha rediseñado completamente la vista principal para centralizar el estado del sistema en un solo lugar.
+- **PC Boost**: Nueva función para optimizar el rendimiento del sistema con un solo clic desde el panel principal.
+- **Resumen de Estado Centralizado**: El nuevo panel muestra resúmenes directos de Seguridad, Aplicaciones de Inicio, y estado de Limpieza.
+- **Comprobación de Windows Update**: El servicio de seguridad ahora verifica el estado de las actualizaciones de Windows.
+- **Análisis de Limpieza Mejorado**: La función de limpieza ahora puede analizar la carpeta de Descargas y buscar archivos grandes.
+
+### Cambiado
+
+- **Rediseño de la Interfaz Principal**: La `DashboardView` ha sido modernizada para ofrecer una experiencia de usuario más intuitiva y centralizada.
+
+
+
 ## [1.1.5] - 2025-12-22
 
 ### Añadido

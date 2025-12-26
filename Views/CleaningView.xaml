@@ -5,28 +5,111 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <StackPanel Margin="0,0,0,0">
-        <TextBlock Text="Módulo de Limpieza" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,30"/>
-        
-        <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" HorizontalAlignment="Left" MinWidth="400">
-             <StackPanel>
-                <TextBlock Text="Limpieza Rápida" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
-                <TextBlock Text="Elimina archivos temporales, caché de navegador y residuos del sistema para liberar espacio." Foreground="#AAA" FontSize="14" Margin="0,0,0,15" TextWrapping="Wrap"/>
-                
-                <StackPanel Orientation="Vertical" Margin="0,10,0,15">
-                    <CheckBox Content="Vaciar Papelera de Reciclaje" 
-                              IsChecked="{Binding CleanRecycleBin}" 
-                              Foreground="White" FontSize="14" Margin="0,5"/>
-                    <CheckBox Content="Limpiar Caché de Navegador" 
-                              IsChecked="{Binding CleanBrowserCache}" 
-                              Foreground="White" FontSize="14" Margin="0,5"/>
-                    <CheckBox Content="Limpiar Archivos Temporales del Sistema" 
-                              IsChecked="{Binding CleanSystemTemp}" 
-                              Foreground="White" FontSize="14" Margin="0,5"/>
+        <Grid Style="{StaticResource AnimatedViewStyle}" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Gestión de Almacenamiento" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,25"/>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1.2*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Columna Izquierda: Limpieza Rápida -->
+                <StackPanel Grid.Column="0" Margin="0,0,20,0">
+                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,20">
+                        <StackPanel>
+                            <TextBlock Text="Limpieza Rápida" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                            <TextBlock Text="Libera espacio eliminando archivos residuales que no afectan tus documentos personales." 
+                                       Foreground="#888" FontSize="13" Margin="0,0,0,20" TextWrapping="Wrap"/>
+
+                            <StackPanel Margin="0,0,0,20">
+                                <CheckBox Content="Papelera de Reciclaje" IsChecked="{Binding CleanRecycleBin}" Foreground="White" Margin="0,5"/>
+                                <CheckBox Content="Caché de Navegadores" IsChecked="{Binding CleanBrowserCache}" Foreground="White" Margin="0,5"/>
+                                <CheckBox Content="Archivos Temporales" IsChecked="{Binding CleanSystemTemp}" Foreground="White" Margin="0,5"/>
+                            </StackPanel>
+
+                            <Button Content="LIMPIAR AHORA" Command="{Binding CleanTempFilesCommand}" Style="{StaticResource PrimaryButtonStyle}" Height="40"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource AnimatedCardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Herramientas de Windows" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
+                            <Button Content="Liberador de espacio (Cleanmgr)" Command="{Binding OpenCleanmgrCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,5"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
-                <Button Content="Iniciar Limpieza" Command="{Binding CleanTempFilesCommand}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" Width="250"/>
-             </StackPanel>
-        </Border>
-    </StackPanel>
+                <!-- Columna Derecha: Análisis Profundo -->
+                <Border Grid.Column="1" Style="{StaticResource AnimatedCardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                            <TextBlock Text="Análisis de Archivos Grandes" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
+                            <TextBlock Text="Encuentra archivos que ocupan más de 500MB en tus carpetas de Descargas y Escritorio." 
+                                       Foreground="#888" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                            
+                            <Button Content="ESCANEAR ARCHIVOS" Command="{Binding DeepScanCommand}" Style="{StaticResource SecondaryButtonStyle}" Height="35"/>
+                        </StackPanel>
+
+                        <Rectangle Grid.Row="1" Height="1" Fill="#333" Margin="0,0,0,20"/>
+
+                        <!-- Resultados del Análisis -->
+                        <Grid Grid.Row="2">
+                            <TextBlock Text="No se han encontrado archivos grandes todavía." Foreground="#555" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding DeepScanResult.Count, Converter={StaticResource InvertedIntToVisibilityConverter}}"/>
+
+                            <ScrollViewer Visibility="{Binding DeepScanResult.Count, Converter={StaticResource IntToVisibilityConverter}}">
+                                <ItemsControl ItemsSource="{Binding DeepScanResult}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="10" Margin="0,0,8,10" Padding="15" BorderBrush="#222" BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <Border Background="#2A2A2A" Width="40" Height="40" CornerRadius="8" Margin="0,0,15,0">
+                                                        <TextBlock Text="📄" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Path}" Foreground="White" FontSize="13" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxWidth="350"/>
+                                                        <TextBlock Text="Archivo detectado en el escaneo" Foreground="#666" FontSize="11" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    
+                                                    <TextBlock Grid.Column="2" Text="{Binding FormattedSize}" Foreground="{DynamicResource PrimaryBrush}" FontSize="15" FontWeight="Black" VerticalAlignment="Center" Margin="15,0"/>
+                                                    
+                                                    <Button Grid.Column="3" 
+                                                            Command="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                            CommandParameter="{Binding Path}"
+                                                            Content="📂 Abrir" 
+                                                            Style="{StaticResource SecondaryButtonStyle}" 
+                                                            Padding="12,5" 
+                                                            FontSize="11" 
+                                                            Height="30"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
 </UserControl>

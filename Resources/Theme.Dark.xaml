@@ -4,4 +4,6 @@
     <Color x:Key="SurfaceColor">#1E1E1E</Color>
     <Color x:Key="TextColor">#FFFFFF</Color>
     <Color x:Key="SecondaryTextColor">#C8C8C8</Color>
+    <Color x:Key="ComboBoxBackgroundColor">#2A2A2A</Color>
+    <Color x:Key="ComboBoxBorderColor">#444444</Color>
 </ResourceDictionary>

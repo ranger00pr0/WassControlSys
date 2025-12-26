@@ -3,9 +3,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:core="clr-namespace:WassControlSys.Core"
              mc:Ignorable="d" 
-             d:DesignHeight="800" d:DesignWidth="800">
-    <Grid Margin="10">
+             d:DesignHeight="850" d:DesignWidth="1000">
+    <UserControl.Resources>
+        <CollectionViewSource x:Key="GroupedProcesses" Source="{Binding Processes}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="IsForeground"/>
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+
+        <core:BooleanToStringConverter x:Key="IsForegroundToTypeConverter"/>
+    </UserControl.Resources>
+    
+    <Grid Style="{StaticResource AnimatedViewStyle}" Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -14,167 +25,92 @@
 
         <TextBlock Grid.Row="0" Text="Rendimiento y Procesos" Style="{StaticResource HeaderTextStyle}"/>
 
-        <!-- Dashboard Superior: CPU, Memoria, Núcleos, Red, Disco -->
-        <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="25,20" Margin="0,0,0,15">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="25"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="25"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="25"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="25"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Procesador (CPU) - Temperatura -->
-                <StackPanel Grid.Column="0" VerticalAlignment="Center" MinWidth="120">
-                    <TextBlock Text="Procesador (CPU)" 
-                               Foreground="{DynamicResource SecondaryTextBrush}" 
-                               FontSize="13" 
-                               Margin="0,0,0,8"/>
-                    <TextBlock Text="{Binding CpuTempC, StringFormat={}{0:F0}°C}" 
-                               Foreground="{DynamicResource TextBrush}" 
-                               FontSize="38" 
-                               FontWeight="Bold"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding ThermalAlert}" 
-                               Foreground="#FF4444" 
-                               FontSize="11" 
-                               TextWrapping="Wrap"
-                               HorizontalAlignment="Center"
-                               Margin="0,4,0,0"
+        <!-- Dashboard Moderno de Métricas -->
+        <UniformGrid Grid.Row="1" Columns="5" Margin="0,0,0,20">
+            <!-- CPU -->
+            <Border Style="{StaticResource AnimatedCardStyle}" Margin="5">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="Procesador (CPU)" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <Grid>
+                        <Ellipse Stroke="{DynamicResource PrimaryBrush}" StrokeThickness="4" Width="80" Height="80" Opacity="0.1"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding CpuTempC, StringFormat={}{0:F0}°C}" Foreground="White" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Temp" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="{Binding ThermalAlert}" Foreground="#EF4444" FontSize="10" Margin="0,8,0,0" TextAlignment="Center" TextWrapping="Wrap"
                                Visibility="{Binding ThermalAlert, Converter={StaticResource StringNotEmptyToVisibilityConverter}}"/>
                 </StackPanel>
+            </Border>
 
-                <!-- Separador 1 -->
-                <Border Grid.Column="1" Width="1" Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="12,0"/>
-
-                <!-- Memoria (RAM) -->
-                <StackPanel Grid.Column="2" VerticalAlignment="Center" MinWidth="120">
-                    <TextBlock Text="Memoria" 
-                               Foreground="{DynamicResource SecondaryTextBrush}" 
-                               FontSize="13" 
-                               Margin="0,0,0,8"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Text="{Binding RamUsage, StringFormat={}{0:F0}}" 
-                                   Foreground="{DynamicResource TextBrush}" 
-                                   FontSize="38" 
-                                   FontWeight="Bold"/>
-                        <TextBlock Text="%" 
-                                   Foreground="{DynamicResource TextBrush}" 
-                                   FontSize="24" 
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Bottom"
-                                   Margin="2,0,0,4"/>
-                    </StackPanel>
-                    <TextBlock Text="GB en uso" 
-                               Foreground="{DynamicResource SecondaryTextBrush}" 
-                               FontSize="11" 
-                               HorizontalAlignment="Center"
-                               Margin="0,4,0,0"/>
+            <!-- RAM -->
+            <Border Style="{StaticResource AnimatedCardStyle}" Margin="5">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="Memoria (RAM)" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <Grid>
+                        <Ellipse Stroke="{DynamicResource PrimaryBrush}" StrokeThickness="4" Width="80" Height="80" Opacity="0.1"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding RamUsage, StringFormat={}{0:0}%}" Foreground="White" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Uso" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="En uso" Foreground="#888" FontSize="10" Margin="0,8,0,0" HorizontalAlignment="Center"/>
                 </StackPanel>
+            </Border>
 
-                <!-- Separador 2 -->
-                <Border Grid.Column="3" Width="1" Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="12,0"/>
-
-                <!-- Uso por Núcleo -->
-                <StackPanel Grid.Column="4" VerticalAlignment="Center" MinWidth="280">
-                    <TextBlock Text="Uso por Núcleo" 
-                               Foreground="{DynamicResource SecondaryTextBrush}" 
-                               FontSize="13" 
-                               Margin="0,0,0,10"/>
+            <!-- CPU Cores (Mini View) -->
+            <Border Style="{StaticResource AnimatedCardStyle}" Margin="5">
+                <StackPanel>
+                    <TextBlock Text="Uso por Núcleos" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,15"/>
                     <ItemsControl ItemsSource="{Binding CpuPerCore}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"/>
+                                <UniformGrid Columns="2"/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Width="65" 
-                                        Height="55" 
-                                        Margin="0,0,10,0" 
-                                        Background="{DynamicResource WindowBackgroundBrush}" 
-                                        CornerRadius="8" 
-                                        ToolTip="{Binding Index, StringFormat={}Núcleo {0}}">
-                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock Text="{Binding Index, StringFormat={}C{0}}" 
-                                                   FontSize="11" 
-                                                   Foreground="{DynamicResource SecondaryTextBrush}" 
-                                                   HorizontalAlignment="Center"
-                                                   Margin="0,0,0,3"/>
-                                        <TextBlock Text="{Binding Usage, StringFormat={}{0:F0}%}" 
-                                                   FontSize="16" 
-                                                   FontWeight="Bold" 
-                                                   Foreground="{DynamicResource TextBrush}" 
-                                                   HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <Grid Margin="2">
+                                    <ProgressBar Value="{Binding Usage}" Maximum="100" Height="4" VerticalAlignment="Bottom" Foreground="{DynamicResource PrimaryBrush}"/>
+                                    <TextBlock Text="{Binding Usage, StringFormat={}{0:F0}%}" FontSize="9" Foreground="White" HorizontalAlignment="Right" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding Index, StringFormat={}C{0}}" FontSize="9" Foreground="#666" HorizontalAlignment="Left" Margin="0,0,0,4"/>
+                                </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
+            </Border>
 
-                <!-- Separador 3 -->
-                <Border Grid.Column="5" Width="1" Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="12,0"/>
-
-                <!-- Red -->
-                <StackPanel Grid.Column="6" VerticalAlignment="Center" MinWidth="120">
-                    <TextBlock Text="Red" 
-                               Foreground="{DynamicResource SecondaryTextBrush}" 
-                               FontSize="13" 
-                               Margin="0,0,0,8"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Text="{Binding NetRecvMbps, StringFormat={}{0:F1}}" 
-                                   Foreground="{DynamicResource TextBrush}" 
-                                   FontSize="38" 
-                                   FontWeight="Bold"/>
-                        <TextBlock Text=" Mbps" 
-                                   Foreground="{DynamicResource TextBrush}" 
-                                   FontSize="16" 
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Bottom"
-                                   Margin="4,0,0,6"/>
-                    </StackPanel>
-                    <TextBlock Text="↓ Descarga" 
-                               Foreground="{DynamicResource SecondaryTextBrush}" 
-                               FontSize="11" 
-                               HorizontalAlignment="Center"
-                               Margin="0,4,0,0"/>
+            <!-- Red -->
+            <Border Style="{StaticResource AnimatedCardStyle}" Margin="5">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="Red (Descarga)" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <Grid>
+                        <Ellipse Stroke="{DynamicResource PrimaryBrush}" StrokeThickness="4" Width="80" Height="80" Opacity="0.1"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding NetRecvMbps, StringFormat={}{0:F1}}" Foreground="White" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Mbps" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="↓ Entrada Red" Foreground="#888" FontSize="10" Margin="0,8,0,0" HorizontalAlignment="Center"/>
                 </StackPanel>
+            </Border>
 
-                <!-- Separador 4 -->
-                <Border Grid.Column="7" Width="1" Background="{DynamicResource SecondaryTextBrush}" Opacity="0.2" Margin="12,0"/>
-
-                <!-- Disco -->
-                <StackPanel Grid.Column="8" VerticalAlignment="Center" MinWidth="120">
-                    <TextBlock Text="Disco" 
-                               Foreground="{DynamicResource SecondaryTextBrush}" 
-                               FontSize="13" 
-                               Margin="0,0,0,8"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Text="{Binding DiskWritesPerSec, StringFormat={}{0:F0}}" 
-                                   Foreground="{DynamicResource TextBrush}" 
-                                   FontSize="38" 
-                                   FontWeight="Bold"/>
-                        <TextBlock Text="/s" 
-                                   Foreground="{DynamicResource TextBrush}" 
-                                   FontSize="16" 
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Bottom"
-                                   Margin="4,0,0,6"/>
-                    </StackPanel>
-                    <TextBlock Text="Escrituras" 
-                               Foreground="{DynamicResource SecondaryTextBrush}" 
-                               FontSize="11" 
-                               HorizontalAlignment="Center"
-                               Margin="0,4,0,0"/>
+            <!-- Disco -->
+            <Border Style="{StaticResource AnimatedCardStyle}" Margin="5">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="Impacto Disco" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <Grid>
+                        <Ellipse Stroke="{DynamicResource PrimaryBrush}" StrokeThickness="4" Width="80" Height="80" Opacity="0.1"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding DiskWritesPerSec, StringFormat={}{0:F0}}" Foreground="White" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="I/O" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="Escrituras/s" Foreground="#888" FontSize="10" Margin="0,8,0,0" HorizontalAlignment="Center"/>
                 </StackPanel>
-            </Grid>
-        </Border>
+            </Border>
+        </UniformGrid>
 
         <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0">
             <!-- Procesos -->
@@ -317,26 +253,54 @@
                                     Style="{StaticResource SecondaryButtonStyle}" 
                                     Padding="15,8"/>
                         </Grid>
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding Processes}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False" SelectionMode="Single"
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding Source={StaticResource GroupedProcesses}}" AutoGenerateColumns="False" 
+                                  Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" 
+                                  CanUserAddRows="False" SelectionMode="Single"
                                   VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="60"/>
-                            <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="Memoria (MB)" Binding="{Binding WorkingSetMb, StringFormat={}{0:F1}}" Width="100"/>
-                            <DataGridTemplateColumn Header="Acción" Width="120">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="DETENER"
-                                                Command="{Binding DataContext.KillProcessCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource DangerButtonStyle}"
-                                                Padding="10,2"
-                                                ToolTip="Finalizar Proceso"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                            <DataGrid.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.ContainerStyle>
+                                        <Style TargetType="{x:Type GroupItem}">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                        <Expander IsExpanded="True" BorderBrush="#222" BorderThickness="0,0,0,1" Margin="0,0,0,10">
+                                                            <Expander.Header>
+                                                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                                                    <TextBlock Text="{Binding Name, Converter={StaticResource IsForegroundToTypeConverter}, ConverterParameter='Aplicaciones en Primer Plano|Procesos en Segundo Plano'}" 
+                                                                               FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" FontSize="14"/>
+                                                                    <TextBlock Text="{Binding ItemCount, StringFormat=' ({0})'}" 
+                                                                               Foreground="#888" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                                </StackPanel>
+                                                            </Expander.Header>
+                                                            <ItemsPresenter Margin="20,0,0,0"/>
+                                                        </Expander>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </GroupStyle.ContainerStyle>
+                                </GroupStyle>
+                            </DataGrid.GroupStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="70"/>
+                                <DataGridTextColumn Header="Nombre del Proceso" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="Memoria" Binding="{Binding WorkingSetMb, StringFormat={}{0:F1} MB}" Width="150"/>
+                                <DataGridTemplateColumn Header="Acciones" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="DETENER"
+                                                    Command="{Binding DataContext.KillProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource DangerButtonStyle}"
+                                                    Padding="15,4"
+                                                    FontSize="10"
+                                                    ToolTip="Finalizar este proceso"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>
                 </Border>
             </TabItem>
@@ -512,29 +476,6 @@
                         </DataGrid.Columns>
                     </DataGrid>
                     </Grid>
-                </Border>
-            </TabItem>
-
-            <!-- Inicio -->
-            <TabItem Header="Inicio (Startup)">
-                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="0,12,12,12" Padding="15">
-                    <DataGrid ItemsSource="{Binding StartupItems}" AutoGenerateColumns="False" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" CanUserAddRows="False"
-                              VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Aplicación" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="Impacto" Binding="{Binding ImpactScore, StringFormat={}{0:F1}}" Width="100"/>
-                            <DataGridTemplateColumn Header="Estado" Width="120">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button Content="Habilitar" Command="{Binding DataContext.EnableStartupItemCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,2"/>
-                                            <Button Content="Deshabilitar" Command="{Binding DataContext.DisableStartupItemCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Visibility="{Binding IsEnabled, Converter={StaticResource BooleanToVisibilityConverter}}" Style="{StaticResource DangerButtonStyle}" Padding="10,2"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
                 </Border>
             </TabItem>
 
