@@ -154,6 +154,24 @@ namespace WassControlSys.Core
             }
         }
 
+        public async Task OptimizeSelfAsync()
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // 1. Forzar recolección de basura
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect();
+
+                    // 2. Liberar Working Set (Memoria en Task Manager)
+                    EmptyWorkingSet(Process.GetCurrentProcess().Handle);
+                }
+                catch { }
+            });
+        }
+
         private CleanResult Aggregate(CleanResult r1, CleanResult r2)
         {
             return new CleanResult

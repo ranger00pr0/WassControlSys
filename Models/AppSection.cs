@@ -9,6 +9,7 @@ namespace WassControlSys.Models
         Aplicaciones,
         Hardware,
         Herramientas,
-        Configuracion
+        Configuracion,
+        EditorPerfiles
     }
 }

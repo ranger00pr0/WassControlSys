@@ -16,5 +16,6 @@ namespace WassControlSys.Core
         Task<ProcessLaunchResult> CleanPrefetchAsync();
         Task<ProcessLaunchResult> RebuildSearchIndexAsync();
         Task<ProcessLaunchResult> ResetNetworkAsync();
+        Task OptimizeSelfAsync();
     }
 }

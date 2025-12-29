@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WassControlSys.ViewModels;
 
 namespace WassControlSys;
 
@@ -20,8 +21,40 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         
+        // Forzar estado normal ANTES de que se muestre
+        this.WindowState = WindowState.Normal;
+        
         // Actualizar el icono del botón de maximizar según el estado de la ventana
         this.StateChanged += (s, e) => UpdateMaximizeButtonIcon();
+
+        this.IsVisibleChanged += (s, e) => 
+        {
+            if (this.DataContext is MainViewModel vm)
+            {
+                vm.IsWindowVisible = this.IsVisible;
+            }
+        };
+
+        // SourceInitialized se ejecuta ANTES de que la ventana se muestre
+        this.SourceInitialized += (s, e) =>
+        {
+            this.WindowState = WindowState.Normal;
+            this.Width = 1000;
+            this.Height = 600;
+        };
+
+        // Forzar ventana al frente al cargar
+        this.Loaded += (s, e) =>
+        {
+            this.WindowState = WindowState.Normal; // Asegurar estado normal
+            this.Activate();
+            this.Focus();
+            this.Topmost = true;
+            System.Threading.Tasks.Task.Delay(100).ContinueWith(_ => 
+            {
+                Dispatcher.Invoke(() => this.Topmost = false);
+            });
+        };
     }
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
@@ -51,14 +84,25 @@ public partial class MainWindow : Window
     {
         if (Application.Current is App app && app.IsShuttingDown)
         {
-            // Permitir el cierre real
             base.OnClosing(e);
+            return;
+        }
+
+        bool minimize = true; // Default
+        if (this.DataContext is MainViewModel vm)
+        {
+            minimize = vm.MinimizeToTray;
+        }
+
+        if (minimize)
+        {
+            e.Cancel = true;
+            this.Hide();
         }
         else
         {
-            // Cancelar cierre y ocultar
-            e.Cancel = true;
-            this.Hide();
+            // Apagado real si la opción está desactivada
+            if (Application.Current is App app2) app2.Shutdown();
         }
     }
 

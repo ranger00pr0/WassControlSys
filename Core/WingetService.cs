@@ -16,9 +16,9 @@ namespace WassControlSys.Core
             _log = log;
         }
 
-        public async Task<IEnumerable<WingetApp>> GetUpdatableAppsAsync()
+        public async Task<IEnumerable<WingetApp>> GetUpdatableAppsAsync(CancellationToken ct = default)
         {
-            return await Task.Run(() =>
+            return await Task.Run(async () =>
             {
                 var apps = new List<WingetApp>();
                 try
@@ -34,8 +34,14 @@ namespace WassControlSys.Core
                     using (var process = Process.Start(psi))
                     {
                         if (process == null) return apps;
-                        string output = process.StandardOutput.ReadToEnd();
-                        process.WaitForExit();
+                        string output = "";
+                        using (ct.Register(() => { try { process.Kill(); } catch { } }))
+                        {
+                            output = await process.StandardOutput.ReadToEndAsync(ct);
+                            await process.WaitForExitAsync(ct);
+
+                            if (ct.IsCancellationRequested) return apps;
+                        }
 
                         var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                         string? headerLine = lines.FirstOrDefault(l => l.Contains("Id") && (l.Contains("Version") || l.Contains("Versión")));
@@ -118,7 +124,7 @@ namespace WassControlSys.Core
             });
         }
 
-        public async Task<bool> UpdateAppAsync(string appId, IProgress<(int, string)> progress)
+        public async Task<bool> UpdateAppAsync(string appId, IProgress<(int, string)> progress, CancellationToken ct = default)
         {
             try
             {
@@ -144,11 +150,11 @@ namespace WassControlSys.Core
                         _log.Info($"[Winget] {args.Data}");
                         string line = args.Data;
 
-                        if (line.Contains("Downloading", StringComparison.OrdinalIgnoreCase))
+                        if (line.Contains("Downloading", StringComparison.OrdinalIgnoreCase) || line.Contains("Descargando", StringComparison.OrdinalIgnoreCase))
                         {
                             stage = UpdateStage.Downloading;
                         }
-                        else if (line.Contains("Installing", StringComparison.OrdinalIgnoreCase))
+                        else if (line.Contains("Installing", StringComparison.OrdinalIgnoreCase) || line.Contains("Instalando", StringComparison.OrdinalIgnoreCase))
                         {
                             stage = UpdateStage.Installing;
                         }
@@ -181,7 +187,10 @@ namespace WassControlSys.Core
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
 
-                    await process.WaitForExitAsync();
+                    using (ct.Register(() => { try { process.Kill(); } catch { } }))
+                    {
+                        await process.WaitForExitAsync(ct);
+                    }
 
                     if (process.ExitCode == 0)
                     {
@@ -208,9 +217,9 @@ namespace WassControlSys.Core
 
         private enum UpdateStage { None, Downloading, Installing }
 
-        public async Task<bool> UpdateAllAppsAsync()
+        public async Task<bool> UpdateAllAppsAsync(CancellationToken ct = default)
         {
-            return await Task.Run(() =>
+            return await Task.Run(async () =>
              {
                 try
                 {
@@ -222,8 +231,12 @@ namespace WassControlSys.Core
                     };
                     using (var process = Process.Start(psi))
                     {
-                        process?.WaitForExit();
-                        return process?.ExitCode == 0;
+                        if (process == null) return false;
+                        using (ct.Register(() => { try { process.Kill(); } catch { } }))
+                        {
+                            await process.WaitForExitAsync(ct);
+                        }
+                        return process.ExitCode == 0;
                     }
                 }
                 catch { return false; }

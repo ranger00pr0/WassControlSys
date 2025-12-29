@@ -12,7 +12,7 @@
         </Grid.RowDefinitions>
 
         <!-- Encabezado con sutil SlideDown -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,30">
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
             <TextBlock Text="Inicio Principal" Style="{StaticResource HeaderTextStyle}"/>
             <TextBlock Text="{Binding WelcomeMessage}" Style="{StaticResource SubHeaderTextStyle}" Margin="0,5,0,0"/>
         </StackPanel>
@@ -57,7 +57,7 @@
                         </Button>
 
                         <!-- Tarjetas de Resumen -->
-                        <UniformGrid Grid.Row="2" Columns="3" Margin="0,25,0,0">
+                        <UniformGrid Grid.Row="2" Columns="3" Margin="0,15,0,0">
                             <!-- Limpieza -->
                             <Border BorderBrush="#333" BorderThickness="0,0,1,0" Margin="5" Cursor="Hand">
                                 <Border.InputBindings>
@@ -108,19 +108,86 @@
                     <StackPanel Grid.Column="0" Margin="0,0,20,0">
                          <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,15">
                             <StackPanel>
-                                <TextBlock Text="Modo de Rendimiento" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
-                                <UniformGrid Columns="2">
-                                    <RadioButton Content="General" IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=General}" Command="{Binding ApplyPerformanceModeCommand}" CommandParameter="General" Style="{StaticResource {x:Type RadioButton}}" Margin="5"/>
-                                    <RadioButton Content="Gamer" IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Gamer}" Command="{Binding ApplyPerformanceModeCommand}" CommandParameter="Gamer" Style="{StaticResource {x:Type RadioButton}}" Margin="5"/>
-                                    <RadioButton Content="Dev" IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Dev}" Command="{Binding ApplyPerformanceModeCommand}" CommandParameter="Dev" Style="{StaticResource {x:Type RadioButton}}" Margin="5"/>
-                                    <RadioButton Content="Oficina" IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Oficina}" Command="{Binding ApplyPerformanceModeCommand}" CommandParameter="Oficina" Style="{StaticResource {x:Type RadioButton}}" Margin="5"/>
+                                <TextBlock Text="Modo de Rendimiento" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
+                                <!-- Selector de Modos de Rendimiento (Tarjetas Interactivas) -->
+                                <UniformGrid Columns="5" Margin="0,5,0,0">
+                                    <UniformGrid.Resources>
+                                        <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="RadioButton">
+                                                        <Border x:Name="CardBorder" 
+                                                                Background="{DynamicResource SurfaceBrush}" 
+                                                                BorderBrush="Transparent" 
+                                                                BorderThickness="2" 
+                                                                CornerRadius="8" 
+                                                                Padding="10" 
+                                                                Margin="4"
+                                                                Cursor="Hand">
+                                                            <StackPanel HorizontalAlignment="Center">
+                                                                <!-- Icono (Emoji por ahora) -->
+                                                                <TextBlock x:Name="Icon" Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" 
+                                                                           FontSize="20" HorizontalAlignment="Center" Margin="0,0,0,5"
+                                                                           Opacity="0.5"/>
+                                                                
+                                                                <TextBlock x:Name="Text" Text="{TemplateBinding Content}" 
+                                                                           FontSize="12" FontWeight="SemiBold" 
+                                                                           Foreground="{DynamicResource SecondaryTextBrush}" 
+                                                                           HorizontalAlignment="Center"/>
+                                                            </StackPanel>
+                                                            
+                                                            <VisualStateManager.VisualStateGroups>
+                                                                <VisualStateGroup x:Name="CommonStates">
+                                                                    <VisualState x:Name="Normal"/>
+                                                                    <VisualState x:Name="MouseOver">
+                                                                        <Storyboard>
+                                                                            <ColorAnimation Storyboard.TargetName="CardBorder" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource SurfaceHoverColor}" Duration="0:0:0.2"/>
+                                                                        </Storyboard>
+                                                                    </VisualState>
+                                                                </VisualStateGroup>
+                                                                <VisualStateGroup x:Name="CheckStates">
+                                                                    <VisualState x:Name="Unchecked"/>
+                                                                    <VisualState x:Name="Checked">
+                                                                        <Storyboard>
+                                                                            <ColorAnimation Storyboard.TargetName="CardBorder" Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="{StaticResource PrimaryColor}" Duration="0:0:0.2"/>
+                                                                            <DoubleAnimation Storyboard.TargetName="Icon" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
+                                                                            <ColorAnimation Storyboard.TargetName="Text" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="{StaticResource PrimaryColor}" Duration="0:0:0.2"/>
+                                                                        </Storyboard>
+                                                                    </VisualState>
+                                                                </VisualStateGroup>
+                                                            </VisualStateManager.VisualStateGroups>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                             <Trigger Property="IsChecked" Value="True">
+                                                                <!-- Fallback estático por si las animaciones fallan o en diseño -->
+                                                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                                <Setter TargetName="Text" Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                                                <Setter TargetName="Icon" Property="Opacity" Value="1"/>
+                                                                <Setter TargetName="CardBorder" Property="Background">
+                                                                    <Setter.Value>
+                                                                        <SolidColorBrush Color="{DynamicResource PrimaryColor}" Opacity="0.1"/>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </UniformGrid.Resources>
+
+                                    <RadioButton Content="General" Tag="🏠" IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=General}" Command="{Binding ApplyPerformanceModeCommand}" CommandParameter="General"/>
+                                    <RadioButton Content="Gamer" Tag="🎮" IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Gamer}" Command="{Binding ApplyPerformanceModeCommand}" CommandParameter="Gamer"/>
+                                    <RadioButton Content="Dev" Tag="👨‍💻" IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Dev}" Command="{Binding ApplyPerformanceModeCommand}" CommandParameter="Dev"/>
+                                    <RadioButton Content="Oficina" Tag="📊" IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Oficina}" Command="{Binding ApplyPerformanceModeCommand}" CommandParameter="Oficina"/>
+                                    <RadioButton Content="Personal." Tag="⚙️" IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Personalizado}" Command="{Binding ApplyPerformanceModeCommand}" CommandParameter="Personalizado"/>
                                 </UniformGrid>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource AnimatedCardStyle}">
                             <StackPanel>
-                                <TextBlock Text="Acciones Rápidas" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                                <TextBlock Text="Acciones Rápidas" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
                                 <UniformGrid Columns="2">
                                     <Button Content="Limpiar RAM" Command="{Binding OptimizeRamCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="5"/>
                                     <Button Content="Punto Restauración" Command="{Binding CreateRestorePointCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="5"/>

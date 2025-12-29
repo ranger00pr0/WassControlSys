@@ -6,4 +6,12 @@
     <Color x:Key="SecondaryTextColor">#4B5563</Color>
     <Color x:Key="ComboBoxBackgroundColor">#F9FAFB</Color>
     <Color x:Key="ComboBoxBorderColor">#D1D5DB</Color>
+
+    <!-- Pinceles del Tema Claro -->
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource WindowBackgroundColor}"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="{StaticResource SecondaryTextColor}"/>
+    <SolidColorBrush x:Key="ComboBoxBackgroundBrush" Color="{StaticResource ComboBoxBackgroundColor}"/>
+    <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="{StaticResource ComboBoxBorderColor}"/>
 </ResourceDictionary>

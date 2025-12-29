@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel; // Added for ObservableCollection
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input; // Añadido para ICommand
@@ -46,6 +47,10 @@ namespace WassControlSys.ViewModels
         private readonly IWingetService _wingetService;
         private readonly IDriverService _driverService;
         private readonly IDiskAnalyzerService _diskAnalyzerService;
+        private CancellationTokenSource? _updateSearchCts;
+        private readonly Dictionary<string, CancellationTokenSource> _appUpdateCts = new();
+        private DispatcherTimer? _idleTimer;
+        private DateTime _lastInputTime;
 
         // Constructor del ViewModel principal
         public MainViewModel(ISystemMaintenanceService maintenance, IMonitoringService monitoringService, IPerformanceProfileService profiles, ISettingsService settings, ILogService log, ISystemInfoService systemInfoService, ISecurityService securityService, IDialogService dialogService, IStartupService startupService, IServiceOptimizerService serviceOptimizerService, IBloatwareService bloatwareService, IPrivacyService privacyService, IProcessManagerService processManagerService, ITemperatureMonitorService temperatureMonitorService, IDiskHealthService diskHealthService, ILocalizationService localizationService, IRestorePointService restorePointService, IBatteryService batteryService, IWingetService wingetService, IDriverService driverService, IDiskAnalyzerService diskAnalyzerService)
@@ -133,18 +138,20 @@ namespace WassControlSys.ViewModels
             
             CreateRestorePointCommand = new RelayCommand(async _ => await ExecuteCreateRestorePointAsync());
             UpdateAppCommand = new RelayCommand<string>(async id => await ExecuteUpdateAppAsync(id));
+            CancelAppUpdateCommand = new RelayCommand<string>(id => ExecuteCancelAppUpdate(id));
             UpdateAllAppsCommand = new RelayCommand(async _ => await ExecuteUpdateAllAppsAsync());
             ExportDriversCommand = new RelayCommand(async _ => await ExecuteExportDriversAsync());
             AnalyzeDiskSpaceCommand = new RelayCommand<string>(async path => await ExecuteAnalyzeDiskSpaceAsync(path));
             RefreshBatteryCommand = new RelayCommand(async _ => await LoadBatteryInfoAsync());
             RefreshUpdatableAppsCommand = new RelayCommand(async _ => await LoadUpdatableAppsAsync());
-            CancelUpdateSearchCommand = new RelayCommand(_ => { IsSearchingUpdates = false; StatusMessage = "Búsqueda cancelada"; });
+            CancelUpdateSearchCommand = new RelayCommand(_ => { _updateSearchCts?.Cancel(); IsSearchingUpdates = false; StatusMessage = "Búsqueda cancelada"; });
             ClearProcessSearchCommand = new RelayCommand(_ => ProcessSearchText = string.Empty);
             ClearServiceSearchCommand = new RelayCommand(_ => ServiceSearchText = string.Empty);
             ToggleServiceCommand = new RelayCommand<WindowsService>(async s => await ExecuteToggleServiceAsync(s));
             FreeUpDiskSpaceCommand = new RelayCommand(_ => ExecuteFreeUpDiskSpace(), _ => SelectedDriveForCleanup != null);
             PcBoostCommand = new RelayCommand(async _ => await ExecutePcBoostAsync());
             DeepScanCommand = new RelayCommand(async _ => await ExecuteDeepScanAsync());
+            OpenDiscordCommand = new RelayCommand(ExecuteOpenDiscord);
             OpenCleanmgrCommand = new RelayCommand(_ => ExecuteOpenCleanmgr());
             RunToolCommand = new RelayCommand(p => 
             {
@@ -190,6 +197,52 @@ namespace WassControlSys.ViewModels
             // Cargar info inicial
             _ = LoadLastRestorePointAsync();
             LoadDiskAnalyzers();
+            
+            SetupIdleMaintenance();
+        }
+
+        private void SetupIdleMaintenance()
+        {
+            _idleTimer = new DispatcherTimer();
+            _idleTimer.Interval = TimeSpan.FromMinutes(1);
+            _idleTimer.Tick += async (s, e) => await CheckIdleStateAsync();
+            _idleTimer.Start();
+        }
+
+        private async Task CheckIdleStateAsync()
+        {
+            if (!OptimizeOnIdle) return;
+
+            var idleTime = _monitoringService.GetIdleTime();
+            
+            // Si el PC ha estado inactivo por más de 10 minutos
+            if (idleTime.TotalMinutes >= 10)
+            {
+                // Evitar ejecuciones múltiples seguidas (ej. una vez por hora máximo en idle)
+                if ((DateTime.Now - _lastAutoMaintenance).TotalHours >= 1)
+                {
+                    _log?.Info($"PC Inactivo por {idleTime.TotalMinutes:F1} min. Iniciando mantenimiento automático.");
+                    await ExecuteSilentMaintenanceAsync();
+                    _lastAutoMaintenance = DateTime.Now;
+                }
+            }
+        }
+
+        private DateTime _lastAutoMaintenance = DateTime.MinValue;
+
+        private async Task ExecuteSilentMaintenanceAsync()
+        {
+            try
+            {
+                // Limpieza rápida y optimización de RAM
+                await _maintenance.OptimizeMemoryAsync();
+                var options = new CleaningOptions { CleanSystemTemp = true, CleanRecycleBin = true };
+                await _maintenance.CleanTemporaryFilesAsync(options);
+            }
+            catch (Exception ex)
+            {
+                _log?.Error("Error en mantenimiento automático (Idle)", ex);
+            }
         }
 
         private void LoadDiskAnalyzers()
@@ -208,6 +261,15 @@ namespace WassControlSys.ViewModels
                 _log?.Error("Error loading disk analyzers", ex);
             }
             DiskAnalyzers = analyzers;
+        }
+
+        public void StopAllTasks()
+        {
+            _log?.Info("Deteniendo todas las tareas en segundo plano...");
+            _monitoringTimer?.Stop();
+            _processTimer?.Stop();
+            _updateSearchCts?.Cancel();
+            _updateSearchCts?.Dispose();
         }
 
         // Implementación de la interfaz INotifyPropertyChanged
@@ -286,6 +348,19 @@ namespace WassControlSys.ViewModels
                     _log?.Info($"Modo cambiado a: {value}");
                 }
             }
+        }
+
+        private PerformanceMode _profileToEdit = PerformanceMode.Gamer;
+        public PerformanceMode ProfileToEdit
+        {
+            get => _profileToEdit;
+            set { if (_profileToEdit != value) { _profileToEdit = value; OnPropertyChanged(); LoadProfileConfig(value); } }
+        }
+
+        private void LoadProfileConfig(PerformanceMode mode)
+        {
+            // Placeholder
+            _log?.Info($"Cargando configuración para editar perfil: {mode}");
         }
 
         // --- Propiedades para Monitoreo (Task 04) ---
@@ -826,6 +901,7 @@ namespace WassControlSys.ViewModels
                 {
                     _runOnStartup = value;
                     OnPropertyChanged();
+                    // Ejecutar el cambio de registro
                     _ = ToggleRunOnStartupAsync(value);
                     _ = SaveSettingsAsync();
                 }
@@ -840,10 +916,35 @@ namespace WassControlSys.ViewModels
             {
                 if (_isDarkMode != value)
                 {
-                    _isDarkMode = value;
-                    OnPropertyChanged();
-                    if (Application.Current is App app) app.ChangeTheme(value);
-                    _ = SaveSettingsAsync();
+                    // Confirmación antes de cambiar
+                    // Tarea asíncrona lanzada "en segundo plano" porque un setter no puede ser async
+                    // pero necesitamos que la UI reaccione. La forma correcta es lanzar el diálogo y si confirmar, cambiar.
+                    // Sin embargo, el binding setea el valor antes.
+                    // Patron mejor: Cambiar el valor solo si el usuario confirma.
+                    // Pero como el ToggleButton ya cambió el estado visual...
+                    // Lo mejor es aceptar el cambio y aplicar, o revertir si cancela.
+                    
+                    // Nota: El usuario pidió "solo pida una confirmacion y lo hagas alli mismo".
+                    // Vamos a lanzar la tarea de confirmación.
+                    App.Current.Dispatcher.Invoke(async () => 
+                    {
+                        bool confirm = await _dialogService.ShowConfirmation(
+                            $"¿Desea cambiar al modo {(value ? "Oscuro" : "Claro")}? La interfaz se actualizará inmediatamente.", 
+                            "Cambiar Tema");
+                        
+                        if (confirm)
+                        {
+                            _isDarkMode = value;
+                            OnPropertyChanged(nameof(IsDarkMode));
+                            if (Application.Current is App app) app.ChangeTheme(value);
+                            await SaveSettingsAsync();
+                        }
+                        else
+                        {
+                            // Revertir el toggle en la UI
+                            OnPropertyChanged(nameof(IsDarkMode)); 
+                        }
+                    });
                 }
             }
         }
@@ -873,6 +974,13 @@ namespace WassControlSys.ViewModels
         {
             get => _autoOptimizeRam;
             set { if (_autoOptimizeRam != value) { _autoOptimizeRam = value; OnPropertyChanged(); _ = SaveSettingsAsync(); } }
+        }
+
+        private bool _optimizeOnIdle;
+        public bool OptimizeOnIdle
+        {
+            get => _optimizeOnIdle;
+            set { if (_optimizeOnIdle != value) { _optimizeOnIdle = value; OnPropertyChanged(); _ = SaveSettingsAsync(); } }
         }
 
         private bool _minimizeToTray;
@@ -940,6 +1048,8 @@ namespace WassControlSys.ViewModels
         public ICommand RefreshBatteryCommand { get; private set; }
         public ICommand RefreshUpdatableAppsCommand { get; private set; }
         public ICommand CancelUpdateSearchCommand { get; private set; }
+        public ICommand CancelAppUpdateCommand { get; private set; }
+        public ICommand OpenDiscordCommand { get; private set; } // Nuevo Comando Discord
         public ICommand ClearProcessSearchCommand { get; private set; }
         public ICommand ClearServiceSearchCommand { get; private set; }
         public ICommand ToggleServiceCommand { get; private set; }
@@ -995,6 +1105,24 @@ namespace WassControlSys.ViewModels
             catch (Exception ex)
             {
                 _log?.Error("Error al iniciar cleanmgr", ex);
+            }
+        }
+
+        private void ExecuteOpenDiscord(object? parameter)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "https://discord.gg/9Z3Z3Z3", // Ejemplo de enlace
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                _log?.Error("No se pudo abrir Discord", ex);
+                _dialogService.ShowMessage($"Error al abrir Discord: {ex.Message}", "Error");
             }
         }
 
@@ -1157,6 +1285,43 @@ namespace WassControlSys.ViewModels
         }
 
         // --- Navigation ---
+        private bool _isWindowVisible = true;
+        public bool IsWindowVisible
+        {
+            get => _isWindowVisible;
+            set
+            {
+                if (_isWindowVisible != value)
+                {
+                    _isWindowVisible = value;
+                    OnPropertyChanged();
+                    UpdateTimerStates();
+                    _log?.Info($"Visibilidad de ventana: {value}");
+                }
+            }
+        }
+
+        private void UpdateTimerStates()
+        {
+            if (_isWindowVisible)
+            {
+                if (!_monitoringTimer.IsEnabled) _monitoringTimer.Start();
+                if (!_processTimer.IsEnabled) _processTimer.Start();
+                // Al volver a mostrarse, forzar una actualización rápida
+                UpdateSystemUsage();
+            }
+            else
+            {
+                // Cuando está oculta, detenemos el monitoreo intensivo (2s)
+                // Pero podemos dejar el de procesos (30s) si queremos o detener ambos
+                _monitoringTimer.Stop();
+                _processTimer.Stop();
+
+                // Auto-optimización de RAM para la propia app al ocultarse
+                _ = _maintenance.OptimizeSelfAsync();
+            }
+        }
+
         private AppSection _currentSection;
         public AppSection CurrentSection
         {
@@ -1221,6 +1386,9 @@ namespace WassControlSys.ViewModels
                     break;
                 case AppSection.Configuracion:
                     // Seccion de ajustes, no requiere carga inicial especial
+                    break;
+                case AppSection.EditorPerfiles:
+                    // Carga info para el editor si es necesario
                     break;
             }
         }
@@ -1412,15 +1580,12 @@ namespace WassControlSys.ViewModels
                 RamThresholdPercent = s.RamThresholdPercent;
                 SelectedLanguage = s.Language;
                 IsDarkMode = s.IsDarkMode;
-                if (Enum.TryParse<AppSection>(s.CurrentSection, true, out var section))
-                {
-                    ExecuteNavigate(section);
-                }
-                else
-                {
-                    ExecuteNavigate(AppSection.Dashboard);
-                }
-                _log?.Info($"Settings cargados. Modo={s.SelectedMode}, Sección={s.CurrentSection}, Start={s.RunOnStartup}, Color={s.AccentColor}");
+                OptimizeOnIdle = s.OptimizeOnIdle;
+                MinimizeToTray = s.MinimizeToTray;
+
+                // Forzar siempre inicio en Dashboard
+                ExecuteNavigate(AppSection.Dashboard);
+                _log?.Info($"Settings cargados. Modo={s.SelectedMode}, Sección={s.CurrentSection}, Idle={s.OptimizeOnIdle}");
             }
             catch (Exception ex)
             {
@@ -1442,7 +1607,9 @@ namespace WassControlSys.ViewModels
                     AutoOptimizeRam = AutoOptimizeRam,
                     RamThresholdPercent = RamThresholdPercent,
                     Language = SelectedLanguage,
-                    IsDarkMode = IsDarkMode
+                    IsDarkMode = IsDarkMode,
+                    OptimizeOnIdle = OptimizeOnIdle,
+                    MinimizeToTray = MinimizeToTray
                 };
                 await _settings.SaveAsync(s);
             }
@@ -1906,16 +2073,23 @@ namespace WassControlSys.ViewModels
         {
             try
             {
+                _updateSearchCts?.Cancel(); // Cancelar búsqueda anterior si existe
+                _updateSearchCts = new CancellationTokenSource();
+                var token = _updateSearchCts.Token;
+
                 IsSearchingUpdates = true;
                 StatusMessage = "Buscando actualizaciones...";
-                var apps = await _wingetService.GetUpdatableAppsAsync();
+                var apps = await _wingetService.GetUpdatableAppsAsync(token);
                 
-                // Si el usuario canceló durante el await, no actualizamos la lista
-                if (IsSearchingUpdates)
+                if (!token.IsCancellationRequested)
                 {
                     UpdatableApps = new ObservableCollection<WingetApp>(apps);
                     _log?.Info($"Actualizaciones winget encontradas: {UpdatableApps.Count}");
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                _log?.Info("Búsqueda de actualizaciones cancelada por el usuario.");
             }
             catch (Exception ex)
             {
@@ -1926,6 +2100,7 @@ namespace WassControlSys.ViewModels
             { 
                 IsSearchingUpdates = false; 
                 StatusMessage = ""; 
+                _updateSearchCts = null;
             }
         }
 
@@ -1943,10 +2118,14 @@ namespace WassControlSys.ViewModels
                 if (!confirm) return;
             }
 
+            var cts = new CancellationTokenSource();
+            _appUpdateCts[id] = cts;
+
             try
             {
                 appToUpdate.IsUpdating = true;
                 appToUpdate.UpdateStatusMessage = "Iniciando...";
+                appToUpdate.UpdateProgress = 0;
 
                 var progress = new Progress<(int percentage, string message)>(report =>
                 {
@@ -1954,26 +2133,40 @@ namespace WassControlSys.ViewModels
                     appToUpdate.UpdateStatusMessage = report.message;
                 });
 
-                bool success = await _wingetService.UpdateAppAsync(id, progress);
+                bool success = await _wingetService.UpdateAppAsync(id, progress, cts.Token);
                 
                 if (success)
                 {
-                    // Successfully updated, remove from list
                     UpdatableApps.Remove(appToUpdate);
+                    _log?.Info($"App actualizada: {id}");
                 }
-                else
+                else if (!cts.Token.IsCancellationRequested)
                 {
-                    appToUpdate.UpdateStatusMessage = "No se pudo actualizar. Visite la web oficial.";
+                    appToUpdate.UpdateStatusMessage = "Reintentar actualización.";
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                appToUpdate.UpdateStatusMessage = "Cancelado.";
             }
             catch (Exception ex)
             {
                 _log?.Error($"Error al actualizar la aplicación {id}", ex);
-                if (appToUpdate != null) appToUpdate.UpdateStatusMessage = "Error crítico.";
+                if (appToUpdate != null) appToUpdate.UpdateStatusMessage = "Error.";
             }
             finally
             {
                 if (appToUpdate != null) appToUpdate.IsUpdating = false;
+                _appUpdateCts.Remove(id);
+            }
+        }
+
+        private void ExecuteCancelAppUpdate(string? id)
+        {
+            if (id != null && _appUpdateCts.TryGetValue(id, out var cts))
+            {
+                cts.Cancel();
+                _log?.Info($"Actualización cancelada por usuario: {id}");
             }
         }
 
@@ -1987,9 +2180,14 @@ namespace WassControlSys.ViewModels
             try
             {
                 IsBusy = true;
-                StatusMessage = "Actualizando todas las aplicaciones...";
-                await _wingetService.UpdateAllAppsAsync();
-                await LoadUpdatableAppsAsync();
+                StatusMessage = "Actualizando aplicaciones...";
+                
+                var appsToUpdate = UpdatableApps.ToList();
+                foreach (var app in appsToUpdate)
+                {
+                    StatusMessage = $"Actualizando {app.Name}...";
+                    await ExecuteUpdateAppAsync(app.Id);
+                }
             }
             finally { IsBusy = false; StatusMessage = ""; }
         }

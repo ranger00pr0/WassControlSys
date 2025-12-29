@@ -183,6 +183,31 @@ namespace WassControlSys.Core
             foreach (var c in _netRecvCounters) c?.Dispose();
         }
 
+        public TimeSpan GetIdleTime()
+        {
+            LASTINPUTINFO lastInputInfo = new LASTINPUTINFO();
+            lastInputInfo.cbSize = (uint)Marshal.SizeOf(lastInputInfo);
+            lastInputInfo.dwTime = 0;
+
+            if (GetLastInputInfo(ref lastInputInfo))
+            {
+                uint lastInputTick = lastInputInfo.dwTime;
+                uint idleTicks = (uint)Environment.TickCount - lastInputTick;
+                return TimeSpan.FromMilliseconds(idleTicks);
+            }
+            return TimeSpan.Zero;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LASTINPUTINFO
+        {
+            public uint cbSize;
+            public uint dwTime;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
         private int GetActiveTcpConnectionsCount()
         {
             try

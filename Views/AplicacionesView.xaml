@@ -62,7 +62,7 @@
                                 <DataGridTemplateColumn Header="Acción" Width="100">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="Eliminar" Command="{Binding DataContext.UninstallBloatwareAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource DangerButtonStyle}" Padding="10,2"/>
+                                            <Button Content="Desinstalar" Command="{Binding DataContext.UninstallBloatwareAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource DangerButtonStyle}" Padding="10,2"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

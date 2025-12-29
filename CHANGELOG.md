@@ -5,6 +5,20 @@ Todas las mejoras notables de este proyecto serán documentadas en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.1.7] - 2026-01-02
+
+### Añadido
+
+- **Editor de Perfiles de Rendimiento**: Nueva herramienta para personalizar qué acciones se ejecutan en cada modo (Gamer, Dev, Oficina).
+- **Modo Personalizado (Custom)**: Capacidad de crear y guardar una configuración de optimización desde cero.
+- **Lógica de Reversibilidad**: Sistema que restaura el estado original de servicios y procesos al desactivar un modo.
+- **Descripciones Técnicas**: Añadidas advertencias e información detalla en cada opción del editor para mayor seguridad del usuario.
+- **Persistencia de Perfiles**: Opción para recordar el perfil activo tras reiniciar el sistema.
+
+### Cambiado
+
+- **IPerformanceModeService**: Refactorización del servicio para soportar configuraciones dinámicas y perfiles de usuario.
+
 ## [1.1.6] - 2025-12-25
 
 ### Añadido

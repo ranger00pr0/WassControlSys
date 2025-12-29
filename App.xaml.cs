@@ -16,10 +16,23 @@ namespace WassControlSys
     {
         private readonly ServiceProvider _serviceProvider;
         private NotifyIcon? _notifyIcon;
+        private System.Threading.Mutex? _instanceMutex;
         public bool IsShuttingDown { get; private set; }
 
         public App()
         {
+            // Verificar si ya existe una instancia
+            bool createdNew;
+            _instanceMutex = new System.Threading.Mutex(true, "WassControlSys_SingleInstance_Mutex", out createdNew);
+            
+            if (!createdNew)
+            {
+                // Ya existe una instancia, mostrar mensaje y cerrar
+                MessageBox.Show("WassControlSys ya está en ejecución.", "Instancia Activa", MessageBoxButton.OK, MessageBoxImage.Information);
+                Current.Shutdown();
+                return;
+            }
+
             DispatcherUnhandledException += App_DispatcherUnhandledException;
             var serviceCollection = new ServiceCollection();
             ConfigureServices(serviceCollection);
@@ -96,7 +109,12 @@ namespace WassControlSys
             
             SetupTrayIcon();
             
+            // Asegurar estado normal antes de mostrar
+            mainWindow.WindowState = WindowState.Normal;
             mainWindow.Show();
+            mainWindow.WindowState = WindowState.Normal; // Forzar de nuevo después de Show
+            mainWindow.Activate();
+            mainWindow.Focus();
         }
 
         private void SetupTrayIcon()
@@ -175,6 +193,7 @@ namespace WassControlSys
         private void ShutdownApp()
         {
             IsShuttingDown = true;
+            (MainWindow?.DataContext as MainViewModel)?.StopAllTasks();
             _notifyIcon?.Dispose();
             Shutdown();
         }
@@ -182,6 +201,8 @@ namespace WassControlSys
         protected override void OnExit(ExitEventArgs e)
         {
             _notifyIcon?.Dispose();
+            _instanceMutex?.ReleaseMutex();
+            _instanceMutex?.Dispose();
             base.OnExit(e);
         }
 

@@ -1,0 +1,127 @@
+<UserControl x:Class="WassControlSys.Views.ProfileEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid Style="{StaticResource AnimatedViewStyle}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Cabecera -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Editor de Perfiles de Rendimiento" Style="{StaticResource HeaderTextStyle}"/>
+            <TextBlock Text="Configura exactamente qué acciones se ejecutan en cada modo de optimización." Style="{StaticResource SubHeaderTextStyle}" Margin="0,5,0,0"/>
+        </StackPanel>
+
+        <!-- Selector de Perfil a Editar -->
+        <Border Grid.Row="1" Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Editar Perfil:" Foreground="White" VerticalAlignment="Center" Margin="0,0,20,0" FontSize="16" FontWeight="SemiBold"/>
+                <RadioButton Content="Gamer" IsChecked="{Binding ProfileToEdit, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Gamer}" Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,15,0"/>
+                <RadioButton Content="Dev" IsChecked="{Binding ProfileToEdit, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Dev}" Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,15,0"/>
+                <RadioButton Content="Oficina" IsChecked="{Binding ProfileToEdit, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Oficina}" Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,15,0"/>
+                <RadioButton Content="Personalizado" IsChecked="{Binding ProfileToEdit, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Personalizado}" Style="{StaticResource {x:Type RadioButton}}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Opciones del Editor -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,0,10,0">
+                
+                <!-- SECCIÓN SERVICIOS -->
+                <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,15">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,15">
+                            <StackPanel>
+                                <TextBlock Text="Gestión de Servicios ⚙️" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+                                <TextBlock Text="Detener servicios de Windows que consumen recursos." FontSize="12" Foreground="#888"/>
+                            </StackPanel>
+                        </Grid>
+                        
+                        <Separator Background="#222" Margin="0,0,0,15"/>
+
+                        <!-- Item de servicio: SysMain -->
+                        <Grid Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Superfetch / SysMain" Foreground="White" FontSize="14"/>
+                                <TextBlock Text="Mejora el inicio de apps pero usa RAM y CPU en segundo plano." Foreground="#666" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleButton HorizontalAlignment="Right" IsChecked="True" Style="{StaticResource ToggleSwitchStyle}"/>
+                        </Grid>
+
+                        <!-- Item de servicio: Windows Search -->
+                        <Grid Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Windows Search" Foreground="White" FontSize="14"/>
+                                <TextBlock Text="Indexa archivos para búsqueda rápida. Impacto alto en Disco." Foreground="#666" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleButton HorizontalAlignment="Right" IsChecked="False" Style="{StaticResource ToggleSwitchStyle}"/>
+                        </Grid>
+
+                        <!-- Item de servicio: Telemetría -->
+                        <Grid Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Telemetría de Windows" Foreground="White" FontSize="14"/>
+                                <TextBlock Text="Envío de datos a Microsoft. Seguro de detener." Foreground="#666" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleButton HorizontalAlignment="Right" IsChecked="True" Style="{StaticResource ToggleSwitchStyle}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- SECCIÓN PROCESOS -->
+                <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,15">
+                    <StackPanel>
+                        <TextBlock Text="Control de Procesos 🖥️" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,15"/>
+                        
+                        <Grid Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Reducir prioridad de fondo" Foreground="White" FontSize="14"/>
+                                <TextBlock Text="Baja la prioridad de apps que no estás usando actualmente." Foreground="#666" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleButton HorizontalAlignment="Right" IsChecked="True" Style="{StaticResource ToggleSwitchStyle}"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Cerrar apps de mensajería" Foreground="White" FontSize="14"/>
+                                <TextBlock Text="Cierra Discord, Teams o Skype automáticamente." Foreground="#666" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleButton HorizontalAlignment="Right" IsChecked="False" Style="{StaticResource ToggleSwitchStyle}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- SECCIÓN ENERGÍA -->
+                <Border Style="{StaticResource AnimatedCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Plan de Energía ⚡" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,15"/>
+                        
+                        <Grid>
+                            <StackPanel>
+                                <TextBlock Text="Forzar perfil de energía" Foreground="White" FontSize="14"/>
+                                <TextBlock Text="Cambia automáticamente el plan de energía de Windows." Foreground="#666" FontSize="11"/>
+                            </StackPanel>
+                            <ComboBox HorizontalAlignment="Right" Width="180">
+                                <ComboBoxItem Content="Equilibrado" IsSelected="True"/>
+                                <ComboBoxItem Content="Alto Rendimiento"/>
+                                <ComboBoxItem Content="Ahorro de Energía"/>
+                            </ComboBox>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- BOTONES ACCIÓN -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,30,0,20">
+                    <Button Content="Restaurar Valores" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,15,0" Padding="20,10"/>
+                    <Button Content="💾 Guardar Cambios" Style="{StaticResource PrimaryButtonStyle}" Padding="20,10"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

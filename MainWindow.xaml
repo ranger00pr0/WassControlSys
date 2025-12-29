@@ -8,6 +8,10 @@
         xmlns:views="clr-namespace:WassControlSys.Views"
         mc:Ignorable="d"
         Title="WassControlSys" Height="600" Width="1000"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        WindowState="Normal"
+        WindowStartupLocation="CenterScreen"
         Icon="Resources/img/logo_WCS.ico">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="32" ResizeBorderThickness="4" GlassFrameThickness="0" CornerRadius="0"/>
@@ -187,6 +191,7 @@
                         <views:SecurityView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Proteccion}"/>
                         <views:CleaningView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Almacenamiento}"/>
                         <views:RendimientoView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Rendimiento}"/>
+                        <views:ProfileEditorView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=EditorPerfiles}"/>
                         <views:AplicacionesView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Aplicaciones}"/>
                         <views:HardwareView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Hardware}"/>
                         <views:ToolboxView Visibility="{Binding CurrentSection, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Herramientas}"/>

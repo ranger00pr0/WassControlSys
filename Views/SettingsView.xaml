@@ -10,6 +10,15 @@
             <TextBlock Text="Configuración del Sistema" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,10"/>
             <TextBlock Text="Personaliza el comportamiento y la apariencia de WassControlSys" Style="{StaticResource SubHeaderTextStyle}" Margin="0,0,0,30"/>
 
+            <!-- Herramientas Avanzadas -->
+            <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Herramientas Avanzadas" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,20"/>
+                    <TextBlock Text="Configuración detallada de rendimiento y perfiles." Foreground="#888" FontSize="12" Margin="0,0,0,15"/>
+                    <Button Content="⚙️ Abrir Editor de Perfiles" Command="{Binding NavigateCommand}" CommandParameter="EditorPerfiles" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" Padding="20,10"/>
+                </StackPanel>
+            </Border>
+
             <!-- Comportamiento -->
             <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,20">
                 <StackPanel>
@@ -21,6 +30,16 @@
                             <TextBlock Text="Inicia la protección y el monitoreo automáticamente." Foreground="#888" FontSize="12"/>
                         </StackPanel>
                         <ToggleButton HorizontalAlignment="Right" IsChecked="{Binding RunOnStartup}" Style="{StaticResource ToggleSwitchStyle}"/>
+                    </Grid>
+
+                    <Separator Background="#222" Margin="0,15"/>
+
+                    <Grid Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Optimizar cuando no uso el PC (Idle)" Foreground="White" FontSize="15" Margin="0,0,0,5"/>
+                            <TextBlock Text="Ejecuta limpieza y optimización automática tras 10 min de inactividad." Foreground="#888" FontSize="12"/>
+                        </StackPanel>
+                        <ToggleButton HorizontalAlignment="Right" IsChecked="{Binding OptimizeOnIdle}" Style="{StaticResource ToggleSwitchStyle}"/>
                     </Grid>
 
                     <Separator Background="#222" Margin="0,15"/>
@@ -48,29 +67,49 @@
                         <ToggleButton HorizontalAlignment="Right" IsChecked="{Binding IsDarkMode}" Style="{StaticResource ToggleSwitchStyle}"/>
                     </Grid>
 
-                    <TextBlock Text="Color de Acento" Foreground="White" FontSize="15" Margin="0,0,0,15"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
-                        <!-- Azul -->
-                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#3B82F6" Width="30" Height="30" Margin="0,0,10,0" ToolTip="Azul">
+                    <TextBlock Text="Color del Tema" Foreground="White" FontSize="15" Margin="0,0,0,15"/>
+                    <WrapPanel Orientation="Horizontal" Margin="0,0,0,25">
+                        <!-- Azul (Default) -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#3B82F6" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Azul Sky">
                             <Button.Template><ControlTemplate TargetType="Button"><Border Background="#3B82F6" CornerRadius="15"/></ControlTemplate></Button.Template>
                         </Button>
-                        <!-- Verde -->
-                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#10B981" Width="30" Height="30" Margin="0,0,10,0" ToolTip="Verde">
+                        <!-- Verde Esmeralda -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#10B981" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Verde Esmeralda">
                             <Button.Template><ControlTemplate TargetType="Button"><Border Background="#10B981" CornerRadius="15"/></ControlTemplate></Button.Template>
                         </Button>
-                        <!-- Rojo -->
-                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#EF4444" Width="30" Height="30" Margin="0,0,10,0" ToolTip="Rojo">
+                        <!-- Rojo Carmesí -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#EF4444" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Rojo Carmesí">
                             <Button.Template><ControlTemplate TargetType="Button"><Border Background="#EF4444" CornerRadius="15"/></ControlTemplate></Button.Template>
                         </Button>
-                        <!-- Púrpura -->
-                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#8B5CF6" Width="30" Height="30" Margin="0,0,10,0" ToolTip="Púrpura">
+                        <!-- Púrpura Real -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#8B5CF6" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Púrpura Real">
                             <Button.Template><ControlTemplate TargetType="Button"><Border Background="#8B5CF6" CornerRadius="15"/></ControlTemplate></Button.Template>
                         </Button>
-                        <!-- Naranja -->
-                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#F97316" Width="30" Height="30" Margin="0,0,10,0" ToolTip="Naranja">
+                        <!-- Naranja Atardecer -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#F97316" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Naranja Atardecer">
                             <Button.Template><ControlTemplate TargetType="Button"><Border Background="#F97316" CornerRadius="15"/></ControlTemplate></Button.Template>
                         </Button>
-                    </StackPanel>
+                        <!-- Rosa Neón -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#EC4899" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Rosa Neón">
+                            <Button.Template><ControlTemplate TargetType="Button"><Border Background="#EC4899" CornerRadius="15"/></ControlTemplate></Button.Template>
+                        </Button>
+                        <!-- Cyan Tecnológico -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#06B6D4" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Cyan Tech">
+                            <Button.Template><ControlTemplate TargetType="Button"><Border Background="#06B6D4" CornerRadius="15"/></ControlTemplate></Button.Template>
+                        </Button>
+                        <!-- Lima Eléctrica -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#84CC16" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Lima Eléctrica">
+                            <Button.Template><ControlTemplate TargetType="Button"><Border Background="#84CC16" CornerRadius="15"/></ControlTemplate></Button.Template>
+                        </Button>
+                        <!-- Ámbar Elegante -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#F59E0B" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Ámbar">
+                            <Button.Template><ControlTemplate TargetType="Button"><Border Background="#F59E0B" CornerRadius="15"/></ControlTemplate></Button.Template>
+                        </Button>
+                        <!-- Indigo Profundo -->
+                        <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#6366F1" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Indigo">
+                            <Button.Template><ControlTemplate TargetType="Button"><Border Background="#6366F1" CornerRadius="15"/></ControlTemplate></Button.Template>
+                        </Button>
+                    </WrapPanel>
 
                     <Separator Background="#222" Margin="0,15"/>
 
@@ -93,7 +132,10 @@
                 <StackPanel>
                     <TextBlock Text="Soporte y Diagnóstico" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,20"/>
                     <TextBlock Text="Si experimentas problemas, puedes revisar los registros de actividad." Foreground="#888" FontSize="12" Margin="0,0,0,15"/>
-                    <Button Content="📂 Abrir Carpeta de Logs" Command="{Binding OpenLogFolderCommand}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" Padding="20,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <Button Content="💬 Unirse a Discord" Command="{Binding OpenDiscordCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,10,0" Padding="20,10" Background="#5865F2" BorderBrush="#5865F2"/>
+                        <Button Content="📂 Abrir Carpeta de Logs" Command="{Binding OpenLogFolderCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="20,10"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </StackPanel>

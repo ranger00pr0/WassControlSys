@@ -9,7 +9,8 @@ namespace WassControlSys.Models
         General = 0,
         Gamer = 1,
         Dev = 2,
-        Oficina = 3
+        Oficina = 3,
+        Personalizado = 4
     }
 
     public class ApplyProfileResult
