@@ -280,11 +280,11 @@
                                                     <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="Bold" FontSize="14"/>
                                                     <TextBlock Text="{Binding Description}" Foreground="#888" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,0"/>
                                                 </StackPanel>
-                                                <ToggleButton HorizontalAlignment="Right" VerticalAlignment="Center" 
+                                                <!-- <ToggleButton HorizontalAlignment="Right" VerticalAlignment="Center" 
                                                               IsChecked="{Binding IsEnabled}"
                                                               Command="{Binding DataContext.UpdatePrivacySettingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                               CommandParameter="{Binding}"
-                                                              Style="{StaticResource ToggleSwitchStyle}"/>
+                                                              Style="{StaticResource ToggleSwitchStyle}"/> -->
                                             </Grid>
                                         </Border>
                                     </DataTemplate>

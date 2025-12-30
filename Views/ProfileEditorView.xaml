@@ -51,7 +51,7 @@
                                 <TextBlock Text="Superfetch / SysMain" Foreground="White" FontSize="14"/>
                                 <TextBlock Text="Mejora el inicio de apps pero usa RAM y CPU en segundo plano." Foreground="#666" FontSize="11"/>
                             </StackPanel>
-                            <ToggleButton HorizontalAlignment="Right" IsChecked="True" Style="{StaticResource ToggleSwitchStyle}"/>
+                            <!-- <ToggleButton HorizontalAlignment="Right" IsChecked="True" Style="{StaticResource ToggleSwitchStyle}"/> -->
                         </Grid>
 
                         <!-- Item de servicio: Windows Search -->
@@ -60,7 +60,7 @@
                                 <TextBlock Text="Windows Search" Foreground="White" FontSize="14"/>
                                 <TextBlock Text="Indexa archivos para búsqueda rápida. Impacto alto en Disco." Foreground="#666" FontSize="11"/>
                             </StackPanel>
-                            <ToggleButton HorizontalAlignment="Right" IsChecked="False" Style="{StaticResource ToggleSwitchStyle}"/>
+                            <!-- <ToggleButton HorizontalAlignment="Right" IsChecked="False" Style="{StaticResource ToggleSwitchStyle}"/> -->
                         </Grid>
 
                         <!-- Item de servicio: Telemetría -->
@@ -69,7 +69,7 @@
                                 <TextBlock Text="Telemetría de Windows" Foreground="White" FontSize="14"/>
                                 <TextBlock Text="Envío de datos a Microsoft. Seguro de detener." Foreground="#666" FontSize="11"/>
                             </StackPanel>
-                            <ToggleButton HorizontalAlignment="Right" IsChecked="True" Style="{StaticResource ToggleSwitchStyle}"/>
+                            <!-- <ToggleButton HorizontalAlignment="Right" IsChecked="True" Style="{StaticResource ToggleSwitchStyle}"/> -->
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -84,7 +84,7 @@
                                 <TextBlock Text="Reducir prioridad de fondo" Foreground="White" FontSize="14"/>
                                 <TextBlock Text="Baja la prioridad de apps que no estás usando actualmente." Foreground="#666" FontSize="11"/>
                             </StackPanel>
-                            <ToggleButton HorizontalAlignment="Right" IsChecked="True" Style="{StaticResource ToggleSwitchStyle}"/>
+                            <!-- <ToggleButton HorizontalAlignment="Right" IsChecked="True" Style="{StaticResource ToggleSwitchStyle}"/> -->
                         </Grid>
 
                         <Grid Margin="0,0,0,10">
@@ -92,7 +92,7 @@
                                 <TextBlock Text="Cerrar apps de mensajería" Foreground="White" FontSize="14"/>
                                 <TextBlock Text="Cierra Discord, Teams o Skype automáticamente." Foreground="#666" FontSize="11"/>
                             </StackPanel>
-                            <ToggleButton HorizontalAlignment="Right" IsChecked="False" Style="{StaticResource ToggleSwitchStyle}"/>
+                            <!-- <ToggleButton HorizontalAlignment="Right" IsChecked="False" Style="{StaticResource ToggleSwitchStyle}"/> -->
                         </Grid>
                     </StackPanel>
                 </Border>

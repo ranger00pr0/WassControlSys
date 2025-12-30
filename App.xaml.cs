@@ -5,15 +5,25 @@ using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
 using WassControlSys.Core;
 using WassControlSys.ViewModels;
-using System.Drawing;
-using System.Windows.Forms;
+using System.Drawing; // Re-added
+using System.Windows.Forms; // Re-added
 using Color = System.Windows.Media.Color;
 using ColorConverter = System.Windows.Media.ColorConverter;
+using System.Runtime.InteropServices; // Agregado para P/Invoke
 
 namespace WassControlSys
 {
     public partial class App : Application
     {
+        // P/Invoke para Win32 API
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        private const int SW_RESTORE = 9; // Restores a minimized window.
         private readonly ServiceProvider _serviceProvider;
         private NotifyIcon? _notifyIcon;
         private System.Threading.Mutex? _instanceMutex;
@@ -77,7 +87,8 @@ namespace WassControlSys
             services.AddSingleton<MainViewModel>();
 
             // Registrar MainWindow
-            services.AddSingleton<MainWindow>();
+            services.AddTransient<MainWindow>(s => new MainWindow(s.GetRequiredService<ILogService>()));
+
         }
 
         protected override async void OnStartup(StartupEventArgs e)
@@ -106,15 +117,14 @@ namespace WassControlSys
 
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
             mainWindow.DataContext = _serviceProvider.GetRequiredService<MainViewModel>();
-            
+            this.MainWindow = mainWindow; // Asignar a la propiedad MainWindow de la aplicación
+
             SetupTrayIcon();
             
-            // Asegurar estado normal antes de mostrar
-            mainWindow.WindowState = WindowState.Normal;
+            // Simplemente muestra la ventana. La propia MainWindow se encargará de la activación en su evento Loaded.
             mainWindow.Show();
-            mainWindow.WindowState = WindowState.Normal; // Forzar de nuevo después de Show
-            mainWindow.Activate();
-            mainWindow.Focus();
+            log?.Info($"App.OnStartup - mainWindow.Show() called. Activation is now handled by MainWindow.Loaded event.");
+
         }
 
         private void SetupTrayIcon()
@@ -183,10 +193,13 @@ namespace WassControlSys
             if (MainWindow != null)
             {
                 if (MainWindow.WindowState == WindowState.Minimized)
-                    MainWindow.WindowState = WindowState.Normal;
+                {
+                    ShowWindow(new System.Windows.Interop.WindowInteropHelper(MainWindow).Handle, SW_RESTORE);
+                }
                 
                 MainWindow.Show();
-                MainWindow.Activate();
+                SetForegroundWindow(new System.Windows.Interop.WindowInteropHelper(MainWindow).Handle);
+                // No llamar Activate() ni Focus() de WPF aquí
             }
         }
 

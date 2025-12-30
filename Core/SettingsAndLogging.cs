@@ -81,7 +81,7 @@ namespace WassControlSys.Core
             Directory.CreateDirectory(dir);
             string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             _logFile = Path.Combine(dir, $"session_{stamp}.log");
-            Info("Log inicializado");
+            Info($"Log inicializado. Archivo de log: {_logFile}");
         }
 
         public void Info(string message) => Write("INFO", message);
