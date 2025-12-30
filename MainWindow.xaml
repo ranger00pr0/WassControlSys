@@ -8,142 +8,17 @@
         xmlns:views="clr-namespace:WassControlSys.Views"
         mc:Ignorable="d"
         Title="WassControlSys" Height="600" Width="1000"
-        WindowStyle="None"
+        WindowStyle="SingleBorderWindow"
         ResizeMode="CanResize"
         WindowState="Normal"
         WindowStartupLocation="CenterScreen"
+        ShowActivated="True"
         Icon="Resources/img/logo_WCS.ico">
-    <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="32" ResizeBorderThickness="4" GlassFrameThickness="0" CornerRadius="0"/>
-    </WindowChrome.WindowChrome>
 
     <Border Background="{StaticResource WindowBackgroundBrush}">
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="32"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <!-- Barra de título personalizada -->
-            <Border Grid.Row="0" Background="#1A1A1A" BorderBrush="#333" BorderThickness="0,0,0,1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Título -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
-                        <Image Source="Resources/img/logo_WCS.png" Width="16" Height="16" Margin="0,0,8,0"/>
-                        <TextBlock Text="WassControlSys" 
-                                   FontSize="13" 
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryBrush}"/>
-                    </StackPanel>
-
-                    <!-- Controles de ventana -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
-                        <!-- Botón Minimizar -->
-                        <Button x:Name="MinimizeButton" 
-                                Content="🗕" 
-                                Width="46" 
-                                Height="32" 
-                                Background="Transparent" 
-                                Foreground="White" 
-                                BorderThickness="0" 
-                                FontSize="16"
-                                Cursor="Hand"
-                                Click="MinimizeButton_Click">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#2A2A2A"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <!-- Botón Maximizar/Restaurar -->
-                        <Button x:Name="MaximizeButton" 
-                                Content="🗖" 
-                                Width="46" 
-                                Height="32" 
-                                Background="Transparent" 
-                                Foreground="White" 
-                                BorderThickness="0" 
-                                FontSize="16"
-                                Cursor="Hand"
-                                Click="MaximizeButton_Click">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#2A2A2A"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <!-- Botón Cerrar -->
-                        <Button x:Name="CloseButton" 
-                                Content="✕" 
-                                Width="46" 
-                                Height="32" 
-                                Background="Transparent" 
-                                Foreground="White" 
-                                BorderThickness="0" 
-                                FontSize="16"
-                                Cursor="Hand"
-                                Click="CloseButton_Click">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#E81123"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
             <!-- Main Content -->
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="220"/>
                     <ColumnDefinition Width="*"/>

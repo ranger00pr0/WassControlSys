@@ -9,6 +9,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WassControlSys.ViewModels;
+using WassControlSys.Core;
 
 namespace WassControlSys;
 
@@ -17,15 +18,20 @@ namespace WassControlSys;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    private readonly ILogService _logService;
+    public MainWindow(ILogService logService)
     {
+        _logService = logService;
         InitializeComponent();
         
+        _logService.Info($"MainWindow constructor - Initial WindowState: {this.WindowState}");
+
         // Forzar estado normal ANTES de que se muestre
         this.WindowState = WindowState.Normal;
+        _logService.Info($"MainWindow constructor - WindowState set to Normal: {this.WindowState}");
         
         // Actualizar el icono del botón de maximizar según el estado de la ventana
-        this.StateChanged += (s, e) => UpdateMaximizeButtonIcon();
+
 
         this.IsVisibleChanged += (s, e) => 
         {
@@ -33,6 +39,7 @@ public partial class MainWindow : Window
             {
                 vm.IsWindowVisible = this.IsVisible;
             }
+            _logService.Info($"MainWindow IsVisibleChanged event - IsVisible: {this.IsVisible}");
         };
 
         // SourceInitialized se ejecuta ANTES de que la ventana se muestre
@@ -41,12 +48,14 @@ public partial class MainWindow : Window
             this.WindowState = WindowState.Normal;
             this.Width = 1000;
             this.Height = 600;
+            _logService.Info($"MainWindow SourceInitialized event - WindowState set to Normal, Width=1000, Height=600. Current WindowState: {this.WindowState}");
         };
 
         // Forzar ventana al frente al cargar
         this.Loaded += (s, e) =>
         {
             this.WindowState = WindowState.Normal; // Asegurar estado normal
+            _logService.Info($"MainWindow Loaded event - WindowState set to Normal. Current WindowState: {this.WindowState}");
             this.Activate();
             this.Focus();
             this.Topmost = true;
@@ -57,28 +66,11 @@ public partial class MainWindow : Window
         };
     }
 
-    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
-    {
-        this.WindowState = WindowState.Minimized;
-    }
 
-    private void MaximizeButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (this.WindowState == WindowState.Maximized)
-        {
-            this.WindowState = WindowState.Normal;
-        }
-        else
-        {
-            this.WindowState = WindowState.Maximized;
-        }
-        UpdateMaximizeButtonIcon();
-    }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        this.Close();
-    }
+
+
+
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
@@ -106,11 +98,5 @@ public partial class MainWindow : Window
         }
     }
 
-    private void UpdateMaximizeButtonIcon()
-    {
-        if (MaximizeButton != null)
-        {
-            MaximizeButton.Content = this.WindowState == WindowState.Maximized ? "🗗" : "🗖";
-        }
-    }
+
 }
