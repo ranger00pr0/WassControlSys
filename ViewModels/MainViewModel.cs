@@ -1692,11 +1692,16 @@ namespace WassControlSys.ViewModels
                                 await LoadLastRestorePointAsync();
                                 break;
                             case AppSection.Hardware:
+                                _log?.Info("Iniciando carga de SystemInfo para Hardware.");
                                 var t1 = WithTimeout((SystemInformation == null || string.IsNullOrWhiteSpace(SystemInformation.MachineName)) ? LoadSystemInfoAsync() : Task.CompletedTask);
+                                _log?.Info("Iniciando carga de DiskHealth para Hardware.");
                                 var t2 = (DiskHealth == null || DiskHealth.Count == 0) ? LoadDiskHealthAsync() : Task.CompletedTask; // Ya tiene timeout interno
+                                _log?.Info("Iniciando carga de UnifiedDisks para Hardware.");
                                 var t3 = WithTimeout((UnifiedDisks == null || UnifiedDisks.Count == 0) ? LoadDisksAsync() : Task.CompletedTask);
+                                _log?.Info("Iniciando carga de PrivacySettings para Hardware.");
                                 var t4 = WithTimeout((PrivacySettings == null || PrivacySettings.Count == 0) ? LoadPrivacySettingsAsync() : Task.CompletedTask);
                                 await Task.WhenAll(t1, t2, t3, t4);
+                                _log?.Info("Finalizada la carga de todos los datos para Hardware.");
                                 break;
                             case AppSection.Configuracion:
                                 await LoadSettingsAsync();
