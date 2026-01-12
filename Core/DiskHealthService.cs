@@ -13,101 +13,145 @@ namespace WassControlSys.Core
             return await Task.Run(() =>
             {
                 var list = new List<DiskHealthInfo>();
+                var smartEntries = GetSmartEntries(); // Se obtienen los datos SMART una sola vez
+
                 try
                 {
-                    var smartEntries = GetSmartEntries();
                     using var drives = new System.Management.ManagementObjectSearcher("SELECT DeviceID, Model, SerialNumber, PNPDeviceID, Index, Size FROM Win32_DiskDrive");
                     foreach (var d in drives.Get())
                     {
-                        var id = d["DeviceID"]?.ToString() ?? "";
-                        var model = d["Model"]?.ToString() ?? "";
-                        var serial = d["SerialNumber"]?.ToString() ?? "";
-                        var pnpDeviceId = d["PNPDeviceID"]?.ToString();
-                        int? index = null;
-                        try { if (d["Index"] != null) index = Convert.ToInt32(d["Index"]); } catch { }
-                        long? sizeBytes = null;
-                        try { if (d["Size"] != null) sizeBytes = Convert.ToInt64(d["Size"]); } catch { }
+                        if (d == null) continue;
 
-                        var status = GetSmartStatus(smartEntries, index, pnpDeviceId);
-                        list.Add(new DiskHealthInfo
+                        try
                         {
-                            DeviceId = id,
-                            Model = model,
-                            Serial = serial,
-                            Capacity = sizeBytes.HasValue ? FormatBytes(sizeBytes.Value) : "",
-                            SmartOk = status.HasValue && status.Value,
-                            SmartStatusKnown = status.HasValue,
-                            SmartStatus = status.HasValue ? (status.Value ? "OK" : "FALLA") : "N/D"
-                        });
+                            var id = d["DeviceID"]?.ToString() ?? "";
+                            var model = d["Model"]?.ToString() ?? "";
+                            var serial = d["SerialNumber"]?.ToString() ?? "";
+                            var pnpDeviceId = d["PNPDeviceID"]?.ToString();
+                            int? index = d["Index"] != null ? Convert.ToInt32(d["Index"]) : (int?)null;
+                            long? sizeBytes = d["Size"] != null ? Convert.ToInt64(d["Size"]) : (long?)null;
+
+                            var status = GetSmartStatus(smartEntries, index, pnpDeviceId);
+                            list.Add(new DiskHealthInfo
+                            {
+                                DeviceId = id,
+                                Model = model,
+                                Serial = serial,
+                                Capacity = sizeBytes.HasValue ? FormatBytes(sizeBytes.Value) : "",
+                                SmartOk = status.HasValue && status.Value,
+                                SmartStatusKnown = status.HasValue,
+                                SmartStatus = status.HasValue ? (status.Value ? "OK" : "FALLA") : "N/D"
+                            });
+                        }
+                        catch
+                        {
+                            // Error procesando un disco individual, lo ignoramos y continuamos con el siguiente
+                            // Se podría añadir un log: Debug.WriteLine($"Error processing disk {d["DeviceID"]}: {ex.Message}");
+                        }
                     }
                 }
-                catch { }
+                catch
+                {
+                    // Error crítico al obtener la lista de discos
+                    // Se podría añadir un log: Debug.WriteLine($"Critical error getting disk drives: {ex.Message}");
+                }
+
                 return list;
             });
         }
 
         private static List<(string InstanceName, bool? SmartOk)> GetSmartEntries()
         {
+            var list = new List<(string InstanceName, bool? SmartOk)>();
+            
+            // Primer intento: MSStorageDriver_FailurePredictStatus (más común)
             try
             {
                 using var searcher = new System.Management.ManagementObjectSearcher(@"root\WMI", "SELECT PredictFailure, InstanceName FROM MSStorageDriver_FailurePredictStatus");
-                var list = new List<(string InstanceName, bool? SmartOk)>();
                 foreach (var mo in searcher.Get())
                 {
                     var instance = mo["InstanceName"]?.ToString() ?? "";
                     bool? ok = null;
-                    try
+                    if (mo["PredictFailure"] != null)
                     {
-                        var pf = mo["PredictFailure"];
-                        if (pf != null) ok = Convert.ToInt32(pf) == 0;
+                        ok = Convert.ToInt32(mo["PredictFailure"]) == 0;
                     }
-                    catch { }
-                    list.Add((instance, ok));
+                    if (!string.IsNullOrEmpty(instance)) list.Add((instance, ok));
                 }
-                return list;
             }
-            catch
+            catch (Exception ex)
             {
-                return new List<(string InstanceName, bool? SmartOk)>();
+                throw new Exception("Error al consultar MSStorageDriver_FailurePredictStatus. Esto puede indicar problemas con el repositorio WMI o drivers de disco. Detalle: " + ex.Message, ex);
             }
+
+            // Si el primero no devolvió nada, segundo intento: MSStorageDriver_FailurePredictData
+            if (list.Count == 0)
+            {
+                try
+                {
+                    using var searcher = new System.Management.ManagementObjectSearcher(@"root\WMI", "SELECT InstanceName, PredictFailure, VendorSpecific FROM MSStorageDriver_FailurePredictData");
+                    foreach (var mo in searcher.Get())
+                    {
+                        var instance = mo["InstanceName"]?.ToString() ?? "";
+                        bool? ok = null;
+                        if (mo["PredictFailure"] != null)
+                        {
+                            ok = Convert.ToInt32(mo["PredictFailure"]) == 0;
+                        }
+                        if (!string.IsNullOrEmpty(instance)) list.Add((instance, ok));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Error al consultar MSStorageDriver_FailurePredictData. Detalle: " + ex.Message, ex);
+                }
+            }
+            
+            return list;
         }
 
         private static bool? GetSmartStatus(List<(string InstanceName, bool? SmartOk)> entries, int? diskIndex, string? pnpDeviceId)
         {
+            if (entries.Count == 0) return null;
+
             try
             {
-                if (entries.Count == 0) return null;
-
-                if (diskIndex.HasValue)
+                // Intenta encontrar una coincidencia usando una consulta LINQ más clara.
+                var entry = entries.FirstOrDefault(e =>
                 {
-                    string suffix = "_" + diskIndex.Value.ToString();
-                    foreach (var e in entries)
+                    // Criterio 1: Coincidencia por índice de disco (más fiable cuando está disponible)
+                    if (diskIndex.HasValue && e.InstanceName.EndsWith($"_{diskIndex.Value}", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (e.InstanceName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    }
+
+                    // Criterio 2: Coincidencia por PnpDeviceID (como fallback)
+                    if (!string.IsNullOrWhiteSpace(pnpDeviceId))
+                    {
+                        string pnpNorm = NormalizeForMatch(pnpDeviceId);
+                        if (!string.IsNullOrEmpty(pnpNorm) && NormalizeForMatch(e.InstanceName).Contains(pnpNorm, StringComparison.OrdinalIgnoreCase))
                         {
-                            return e.SmartOk;
+                            return true;
                         }
                     }
-                }
+                    
+                    return false;
+                });
 
-                if (!string.IsNullOrWhiteSpace(pnpDeviceId))
-                {
-                    string pnpNorm = NormalizeForMatch(pnpDeviceId);
-                    foreach (var e in entries)
-                    {
-                        if (NormalizeForMatch(e.InstanceName).Contains(pnpNorm, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return e.SmartOk;
-                        }
-                    }
-                }
+                // Si se encontró una entrada (incluso si es el default, que sería null), devuelve su estado.
+                // Si no se encontró ninguna coincidencia, `entry` será el valor por defecto de la tupla, y `entry.SmartOk` será null.
+                return entry.SmartOk;
             }
-            catch { }
-            return null;
+            catch
+            {
+                return null;
+            }
         }
 
         private static string NormalizeForMatch(string s)
         {
+            if (string.IsNullOrEmpty(s)) return "";
+            // Elimina caracteres no alfanuméricos para una coincidencia más flexible.
             return new string(s.Where(char.IsLetterOrDigit).ToArray());
         }
 

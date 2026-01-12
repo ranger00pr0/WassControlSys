@@ -997,20 +997,32 @@ namespace WassControlSys.ViewModels
         {
             try
             {
-                if (!silent) IsBusy = true;
+                if (!silent) System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = true);
+                
                 var list = await _processManagerService.GetProcessesAsync();
-                _allProcesses = new ObservableCollection<ProcessInfoDto>(list);
-                FilterProcesses();
-                ProcessImpact = await _processManagerService.ComputeImpactAsync();
+                var impact = await _processManagerService.ComputeImpactAsync();
+
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    _allProcesses = new ObservableCollection<ProcessInfoDto>(list);
+                    ProcessImpact = impact;
+                    FilterProcesses(); // This updates the UI-bound `Processes` collection
+                });
             }
             catch (Exception ex)
             {
                 _log?.Error("Error cargando procesos", ex);
-                if (!silent) await _dialogService.ShowMessage($"Error cargando procesos: {ex.Message}", "Error");
+                if (!silent)
+                {
+                    await System.Windows.Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        await _dialogService.ShowMessage($"Error cargando procesos: {ex.Message}", "Error");
+                    });
+                }
             }
             finally
             {
-                if (!silent) IsBusy = false;
+                if (!silent) System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = false);
             }
         }
 
@@ -1154,20 +1166,46 @@ namespace WassControlSys.ViewModels
 
         private async Task LoadDiskHealthAsync()
         {
+            if (!IsWindowVisible) return;
+
             try
             {
                 IsBusy = true;
-                var items = await _diskHealthService.GetDiskHealthAsync();
-                DiskHealth = new ObservableCollection<DiskHealthInfo>(items);
+                
+                // Implementar un timeout para evitar cuelgues por WMI
+                var healthTask = _diskHealthService.GetDiskHealthAsync();
+                var completedTask = await Task.WhenAny(healthTask, Task.Delay(TimeSpan.FromSeconds(15)));
+
+                if (completedTask != healthTask)
+                {
+                    // Si el task que completó no es el de salud, fue el timeout
+                    throw new TimeoutException("La consulta de estado de los discos (WMI) tardó demasiado y fue cancelada.");
+                }
+
+                var items = await healthTask; // Obtenemos el resultado de la tarea ya completada.
+                
+                // Asegurarse de que la actualización de la colección se haga en el hilo de la UI
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    DiskHealth = new ObservableCollection<DiskHealthInfo>(items);
+                    if (!items.Any())
+                    {
+                        StatusMessage = "No se pudo obtener el estado S.M.A.R.T. de los discos.";
+                    }
+                });
             }
             catch (Exception ex)
             {
                 _log?.Error("Error cargando salud de discos", ex);
-                await _dialogService.ShowMessage($"Error cargando salud de discos: {ex.Message}", "Error");
+                // También es seguro mostrar el diálogo desde el hilo de la UI
+                System.Windows.Application.Current.Dispatcher.Invoke(async () =>
+                {
+                    await _dialogService.ShowMessage($"Error cargando salud de discos: {ex.Message}", "Error");
+                });
             }
             finally
             {
-                IsBusy = false;
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = false);
             }
         }
 
@@ -1654,10 +1692,10 @@ namespace WassControlSys.ViewModels
                                 await LoadLastRestorePointAsync();
                                 break;
                             case AppSection.Hardware:
-                                var t1 = (SystemInformation == null || string.IsNullOrWhiteSpace(SystemInformation.MachineName)) ? LoadSystemInfoAsync() : Task.CompletedTask;
-                                var t2 = (DiskHealth == null || DiskHealth.Count == 0) ? LoadDiskHealthAsync() : Task.CompletedTask;
-                                var t3 = (UnifiedDisks == null || UnifiedDisks.Count == 0) ? LoadDisksAsync() : Task.CompletedTask;
-                                var t4 = (PrivacySettings == null || PrivacySettings.Count == 0) ? LoadPrivacySettingsAsync() : Task.CompletedTask;
+                                var t1 = WithTimeout((SystemInformation == null || string.IsNullOrWhiteSpace(SystemInformation.MachineName)) ? LoadSystemInfoAsync() : Task.CompletedTask);
+                                var t2 = (DiskHealth == null || DiskHealth.Count == 0) ? LoadDiskHealthAsync() : Task.CompletedTask; // Ya tiene timeout interno
+                                var t3 = WithTimeout((UnifiedDisks == null || UnifiedDisks.Count == 0) ? LoadDisksAsync() : Task.CompletedTask);
+                                var t4 = WithTimeout((PrivacySettings == null || PrivacySettings.Count == 0) ? LoadPrivacySettingsAsync() : Task.CompletedTask);
                                 await Task.WhenAll(t1, t2, t3, t4);
                                 break;
                             case AppSection.Configuracion:
@@ -1680,6 +1718,16 @@ namespace WassControlSys.ViewModels
                 _log?.Error("Error crítico en navegación", ex);
                 IsBusy = false;
             }
+        }
+
+        private async Task WithTimeout(Task task, int timeoutSeconds = 20)
+        {
+            var completedTask = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(timeoutSeconds)));
+            if (completedTask != task)
+            {
+                throw new TimeoutException($"Una operación de carga de datos excedió el límite de {timeoutSeconds} segundos.");
+            }
+            await task; // Re-lanza la excepción original si la hubo
         }
         
         // ... existing methods like ExecuteRunChkdsk ...
@@ -1860,15 +1908,18 @@ namespace WassControlSys.ViewModels
             try
             {
                 var s = await _settings.LoadAsync();
-                CurrentMode = s.SelectedMode;
-                RunOnStartup = s.RunOnStartup; // This triggers ToggleRunOnStartupAsync, careful not to loop or be redundant.
-                AccentColor = s.AccentColor;
-                AutoOptimizeRam = s.AutoOptimizeRam;
-                RamThresholdPercent = s.RamThresholdPercent;
-                SelectedLanguage = s.Language;
-                IsDarkMode = s.IsDarkMode;
-                OptimizeOnIdle = s.OptimizeOnIdle;
-                MinimizeToTray = s.MinimizeToTray;
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    CurrentMode = s.SelectedMode;
+                    RunOnStartup = s.RunOnStartup;
+                    AccentColor = s.AccentColor;
+                    AutoOptimizeRam = s.AutoOptimizeRam;
+                    RamThresholdPercent = s.RamThresholdPercent;
+                    SelectedLanguage = s.Language;
+                    IsDarkMode = s.IsDarkMode;
+                    OptimizeOnIdle = s.OptimizeOnIdle;
+                    MinimizeToTray = s.MinimizeToTray;
+                });
 
                 _log?.Info($"Settings cargados. Modo={s.SelectedMode}, Sección={s.CurrentSection}, Idle={s.OptimizeOnIdle}");
             }
@@ -1971,12 +2022,19 @@ namespace WassControlSys.ViewModels
         {
             try
             {
-                SystemInformation = await _systemInfoService.GetSystemInfoAsync();
+                var sysInfo = await _systemInfoService.GetSystemInfoAsync();
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    SystemInformation = sysInfo;
+                });
             }
             catch (Exception ex)
             {
                 _log?.Error("Error cargando info del sistema", ex);
-                SystemInformation = new SystemInfo { MachineName = "Error al cargar" };
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    SystemInformation = new SystemInfo { MachineName = "Error al cargar" };
+                });
             }
         }
 
@@ -1984,12 +2042,19 @@ namespace WassControlSys.ViewModels
         {
             try
             {
-                SecurityStatus = await _securityService.GetSecurityStatusAsync();
+                var status = await _securityService.GetSecurityStatusAsync();
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    SecurityStatus = status;
+                });
             }
             catch (Exception ex)
             {
                 _log?.Error("Error cargando estado de seguridad", ex);
-                SecurityStatus = new SecurityStatus { AntivirusName = "Error de carga" };
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    SecurityStatus = new SecurityStatus { AntivirusName = "Error de carga", IsAntivirusEnabled = false };
+                });
             }
         }
 
@@ -1997,20 +2062,24 @@ namespace WassControlSys.ViewModels
         {
             try
             {
-                IsBusy = true;
-                _log?.Info("Cargando elementos de inicio...");
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = true);
                 var items = await _startupService.GetStartupItemsAsync();
-                StartupItems = new ObservableCollection<StartupItem>(items);
-                _log?.Info($"Elementos de inicio cargados: {StartupItems.Count}");
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    StartupItems = new ObservableCollection<StartupItem>(items);
+                });
             }
             catch (Exception ex)
             {
                 _log?.Error("Error cargando elementos de inicio", ex);
-                await _dialogService.ShowMessage($"Error cargando elementos de inicio: {ex.Message}", "Error");
+                await System.Windows.Application.Current.Dispatcher.Invoke(async () =>
+                {
+                    await _dialogService.ShowMessage("No se pudieron cargar los elementos de inicio.", "Error");
+                });
             }
             finally
             {
-                IsBusy = false;
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = false);
             }
         }
 
@@ -2078,13 +2147,17 @@ namespace WassControlSys.ViewModels
 
         private async Task LoadWindowsServicesAsync()
         {
+            if (IsBusy) return;
             try
             {
-                IsBusy = true;
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = true);
                 _log?.Info("Cargando servicios de Windows...");
                 var services = await _serviceOptimizerService.GetWindowsServicesAsync();
-                _allWindowsServices = new ObservableCollection<WindowsService>(services);
-                FilterServices();
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    _allWindowsServices = new ObservableCollection<WindowsService>(services);
+                    FilterServices();
+                });
                 _log?.Info($"Servicios de Windows cargados: {WindowsServices.Count}");
             }
             catch (Exception ex)
@@ -2094,7 +2167,7 @@ namespace WassControlSys.ViewModels
             }
             finally
             {
-                IsBusy = false;
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = false);
             }
         }
 
@@ -2216,22 +2289,23 @@ namespace WassControlSys.ViewModels
 
         private async Task LoadBloatwareAppsAsync()
         {
+            if (IsBusy) return;
             try
             {
-                IsBusy = true;
-                _log?.Info("Cargando aplicaciones de bloatware...");
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = true);
                 var apps = await _bloatwareService.GetBloatwareAppsAsync();
-                BloatwareApps = new ObservableCollection<BloatwareApp>(apps);
-                _log?.Info($"Aplicaciones de bloatware cargadas: {BloatwareApps.Count}");
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    BloatwareApps = new ObservableCollection<BloatwareApp>(apps);
+                });
             }
             catch (Exception ex)
             {
-                _log?.Error("Error cargando aplicaciones de bloatware", ex);
-                await _dialogService.ShowMessage($"Error cargando aplicaciones de bloatware: {ex.Message}", "Error");
+                _log?.Error("Error cargando apps de bloatware", ex);
             }
             finally
             {
-                IsBusy = false;
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = false);
             }
         }
 
@@ -2267,22 +2341,23 @@ namespace WassControlSys.ViewModels
 
         private async Task LoadPrivacySettingsAsync()
         {
+            if (IsBusy) return;
             try
             {
                 IsBusy = true;
-                _log?.Info("Cargando configuraciones de privacidad...");
                 var settings = await _privacyService.GetPrivacySettingsAsync();
-                PrivacySettings = new ObservableCollection<PrivacySetting>(settings);
-                _log?.Info($"Configuraciones de privacidad cargadas: {PrivacySettings.Count}");
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    PrivacySettings = new ObservableCollection<PrivacySetting>(settings);
+                });
             }
             catch (Exception ex)
             {
-                _log?.Error("Error cargando configuraciones de privacidad", ex);
-                await _dialogService.ShowMessage($"Error cargando configuraciones de privacidad: {ex.Message}", "Error");
+                _log?.Error("Error cargando configuración de privacidad", ex);
             }
             finally
             {
-                IsBusy = false;
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = false);
             }
         }
 
@@ -2356,18 +2431,54 @@ namespace WassControlSys.ViewModels
 
         private async Task LoadLastRestorePointAsync()
         {
-            var info = await _restorePointService.GetLastRestorePointAsync();
-            LastRestorePointName = info.Name;
-            LastRestorePointDate = info.Date.HasValue ? info.Date.Value.ToString("g") : "Nunca";
+            try
+            {
+                var rp = await _restorePointService.GetLastRestorePointAsync();
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (!string.IsNullOrEmpty(rp.Name))
+                    {
+                        LastRestorePointName = rp.Name;
+                        LastRestorePointDate = rp.Date?.ToString("g") ?? "";
+                    }
+                    else
+                    {
+                        LastRestorePointName = "No se encontraron puntos.";
+                        LastRestorePointDate = "";
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _log?.Error("Error cargando el último punto de restauración", ex);
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    LastRestorePointName = "Error al cargar";
+                    LastRestorePointDate = "";
+                });
+            }
         }
 
         private async Task LoadBatteryInfoAsync()
         {
+            if (IsBusy) return;
             try
             {
-                BatteryInfo = await _batteryService.GetBatteryStatusAsync();
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = true);
+                var info = await _batteryService.GetBatteryStatusAsync();
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    BatteryInfo = info;
+                });
             }
-            catch (Exception ex) { _log?.Warn($"Error batería: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                _log?.Error("Error cargando información de la batería", ex);
+            }
+            finally
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = false);
+            }
         }
 
         private async Task LoadUpdatableAppsAsync()

@@ -22,12 +22,58 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,0,20">
-                <ListView ItemsSource="{Binding DiskHealth}" Background="Transparent" BorderThickness="0">
+                <ListView ItemsSource="{Binding DiskHealth}" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Dispositivo" Width="240" DisplayMemberBinding="{Binding DeviceId}"/>
-                            <GridViewColumn Header="Modelo" Width="240" DisplayMemberBinding="{Binding Model}"/>
-                            <GridViewColumn Header="Serial" Width="180" DisplayMemberBinding="{Binding Serial}"/>
+                            <GridViewColumn Header="Dispositivo" Width="200">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DeviceId}" ToolTip="{Binding DeviceId}" TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Modelo" Width="240">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Model}" ToolTip="{Binding Model}" TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Serial" Width="150">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Serial}" ToolTip="{Binding Serial}" TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Estado SMART" Width="120">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="8,4" CornerRadius="4" HorizontalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{StaticResource GrayBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SmartStatus}" Value="OK">
+                                                            <Setter Property="Background" Value="{StaticResource SuccessBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SmartStatus}" Value="FALLA">
+                                                            <Setter Property="Background" Value="{StaticResource ErrorBrush}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding SmartStatus}" Foreground="White" TextAlignment="Center"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>
