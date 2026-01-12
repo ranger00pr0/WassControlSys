@@ -5,7 +5,7 @@ namespace WassControlSys.Core
 {
     public interface IDriverService
     {
-        Task<(bool Success, string Message)> ExportDriversAsync(string destinationPath, IProgress<(int, string)> progress);
+        Task<(bool Success, string Message)> ExportDriversAsync(string destinationPath, IProgress<(int, string)> progress, System.Threading.CancellationToken cancellationToken);
         Task<System.Collections.Generic.List<DriverInfo>> GetDriversWithProblemsAsync();
     }
 

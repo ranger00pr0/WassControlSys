@@ -104,6 +104,7 @@ namespace WassControlSys.ViewModels
         private readonly IDiskAnalyzerService _diskAnalyzerService;
         public ProfileEditorViewModel ProfileEditor { get; } // Added
         private CancellationTokenSource? _updateSearchCts;
+        private CancellationTokenSource? _driverExportCancellationTokenSource; // Added for driver export cancellation
         private readonly Dictionary<string, CancellationTokenSource> _appUpdateCts = new();
         private DispatcherTimer? _idleTimer;
         private readonly DispatcherTimer _autoBoostTimer;
@@ -206,6 +207,7 @@ namespace WassControlSys.ViewModels
             CancelAppUpdateCommand = new RelayCommand<string>(id => ExecuteCancelAppUpdate(id));
             UpdateAllAppsCommand = new RelayCommand(async _ => await ExecuteUpdateAllAppsAsync());
             ExportDriversCommand = new RelayCommand(async _ => await ExecuteExportDriversAsync());
+            CancelDriverExportCommand = new RelayCommand(_ => ExecuteCancelDriverExport(), _ => IsExportingDrivers);
             AnalyzeDiskSpaceCommand = new RelayCommand<string>(async path => await ExecuteAnalyzeDiskSpaceAsync(path));
             RefreshBatteryCommand = new RelayCommand(async _ => await LoadBatteryInfoAsync());
             RefreshUpdatableAppsCommand = new RelayCommand(async _ => await LoadUpdatableAppsAsync());
@@ -482,6 +484,9 @@ namespace WassControlSys.ViewModels
             _processTimer?.Stop();
             _updateSearchCts?.Cancel();
             _updateSearchCts?.Dispose();
+            _driverExportCancellationTokenSource?.Cancel();
+            _driverExportCancellationTokenSource?.Dispose();
+            _driverExportCancellationTokenSource = null;
         }
 
         // Implementación de la interfaz INotifyPropertyChanged
@@ -1398,6 +1403,7 @@ namespace WassControlSys.ViewModels
         public ICommand UpdateAppCommand { get; private set; }
         public ICommand UpdateAllAppsCommand { get; private set; }
         public ICommand ExportDriversCommand { get; private set; }
+        public ICommand CancelDriverExportCommand { get; private set; } // Added for cancellation
         public ICommand AnalyzeDiskSpaceCommand { get; private set; }
         public ICommand RefreshBatteryCommand { get; private set; }
         public ICommand RefreshUpdatableAppsCommand { get; private set; }
@@ -2611,7 +2617,7 @@ namespace WassControlSys.ViewModels
 
         private async Task ExecuteExportDriversAsync()
         {
-            if (IsExportingDrivers) return;
+            if (IsExportingDrivers) return; // Prevent multiple exports
 
             if (!IsAdministrator())
             {
@@ -2624,6 +2630,9 @@ namespace WassControlSys.ViewModels
             bool confirm = await _dialogService.ShowConfirmation($"Los drivers se exportarán a:\n\n{path}\n\n¿Desea continuar?", "Confirmar Exportación");
             if (!confirm) return;
             
+            _driverExportCancellationTokenSource = new CancellationTokenSource();
+            var token = _driverExportCancellationTokenSource.Token;
+
             try
             {
                 IsExportingDrivers = true;
@@ -2636,9 +2645,28 @@ namespace WassControlSys.ViewModels
                     DriverExportStatusMessage = report.message;
                 });
 
-                var result = await _driverService.ExportDriversAsync(path, progress);
+                var result = await _driverService.ExportDriversAsync(path, progress, token); // Pass the token
                 
-                await _dialogService.ShowMessage((result.Message ?? "Drivers exportados.") + $"\n\nUbicación: {path}", result.Success ? "Copia de Seguridad Completada" : "Error");
+                if (result.Success)
+                {
+                    await _dialogService.ShowMessage((result.Message ?? "Drivers exportados.") + $"\n\nUbicación: {path}", "Copia de Seguridad Completada");
+                }
+                else
+                {
+                    if (token.IsCancellationRequested) // Check if it was cancelled
+                    {
+                        await _dialogService.ShowMessage("Exportación de drivers cancelada.", "Cancelado");
+                    }
+                    else
+                    {
+                        await _dialogService.ShowMessage((result.Message ?? "Error al exportar drivers."), "Error");
+                    }
+                }
+            }
+            catch (OperationCanceledException) // Handle explicit cancellation
+            {
+                _log?.Info("Exportación de drivers cancelada por el usuario en ViewModel.");
+                await _dialogService.ShowMessage("Exportación de drivers cancelada.", "Cancelado");
             }
             catch (Exception ex)
             {
@@ -2650,7 +2678,15 @@ namespace WassControlSys.ViewModels
                 IsExportingDrivers = false;
                 DriverExportProgress = 0;
                 DriverExportStatusMessage = "";
+                _driverExportCancellationTokenSource?.Dispose(); // Dispose CancellationTokenSource
+                _driverExportCancellationTokenSource = null;
             }
+        }
+
+        private void ExecuteCancelDriverExport()
+        {
+            _driverExportCancellationTokenSource?.Cancel();
+            _log?.Info("Solicitud de cancelación de exportación de drivers.");
         }
 
         private void ExecuteFreeUpDiskSpace()

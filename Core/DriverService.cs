@@ -68,10 +68,12 @@ namespace WassControlSys.Core
             };
         }
 
-        public async Task<(bool Success, string Message)> ExportDriversAsync(string destinationPath, IProgress<(int, string)> progress)
+        public async Task<(bool Success, string Message)> ExportDriversAsync(string destinationPath, IProgress<(int, string)> progress, System.Threading.CancellationToken cancellationToken)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 if (!Directory.Exists(destinationPath))
                 {
                     Directory.CreateDirectory(destinationPath);
@@ -119,7 +121,7 @@ namespace WassControlSys.Core
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
 
-                    await process.WaitForExitAsync();
+                    await process.WaitForExitAsync(cancellationToken);
 
                     if (process.ExitCode == 0)
                     {
@@ -133,6 +135,11 @@ namespace WassControlSys.Core
                         return (false, $"Error al exportar drivers. Código de salida: {process.ExitCode}");
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                _log.Info("Exportación de drivers cancelada por el usuario.");
+                return (false, "Exportación de drivers cancelada.");
             }
             catch (Exception ex)
             {
