@@ -10,5 +10,7 @@ namespace WassControlSys.Models
         public bool SmartStatusKnown { get; set; }
         public string SmartStatus { get; set; } = string.Empty;
         public int Temperature { get; set; } // Added for compatibility
+        public string? PnpDeviceId { get; set; } // Added for more precise disk matching
+        public int? PhysicalDiskIndex { get; set; } // Added for more precise disk matching
     }
 }

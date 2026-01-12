@@ -217,6 +217,45 @@
                                             <Button Content="🛠️ Administrar Particiones" Command="{Binding DataContext.RunToolCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="diskmgmt.msc" Style="{StaticResource SecondaryButtonStyle}" Margin="0,5,5,0"/>
                                             <Button Content="🧹 Liberador de Espacio (Sistema)" Command="{Binding DataContext.OpenCleanmgrCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource SecondaryButtonStyle}" Margin="5,5,0,0"/>
                                         </UniformGrid>
+
+                                        <!-- Disk Analysis Results -->
+                                        <TextBlock Text="Resultados del Análisis de Espacio" FontSize="16" FontWeight="Bold" Margin="0,20,0,10" Foreground="White"/>
+                                        <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding DiskAnalysisResult}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="0,0,0,5">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="2*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding Path}" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding FormattedSize}" Foreground="#AAA" TextAlignment="Right"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                        
+                                        <!-- Large Files Results -->
+                                        <TextBlock Text="Archivos Grandes (>50MB)" FontSize="16" FontWeight="Bold" Margin="0,20,0,10" Foreground="White"/>
+                                        <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding LargeFilesResult}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="0,0,0,5">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="2*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding Path}" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding FormattedSize}" Foreground="#AAA" TextAlignment="Right"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+
                                     </StackPanel>
                                 </DataTemplate>
                             </ContentControl.ContentTemplate>

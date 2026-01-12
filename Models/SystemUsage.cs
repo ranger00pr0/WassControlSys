@@ -14,5 +14,6 @@ namespace WassControlSys.Models
         public double DiskAvgQueueLength { get; set; }
         public double DiskReadLatencyMs { get; set; }
         public double DiskWriteLatencyMs { get; set; }
+        public List<DiskPerformanceInfo> DiskPerformanceInfos { get; set; } = new();
     }
 }

@@ -53,6 +53,8 @@ namespace WassControlSys.ViewModels
 
         public string HealthStatus { get; set; } = "Desconocido";
         public string Temperature { get; set; } = "--";
+        public string? PnpDeviceId { get; set; } // Added for more precise disk matching
+        public int? PhysicalDiskIndex { get; set; } // Added for more precise disk matching
         
         // Real-time stats (updates frequently)
         private double _readSpeed;
@@ -71,6 +73,9 @@ namespace WassControlSys.ViewModels
 
         public ICommand? AnalyzeCommand { get; set; }
         public ICommand? OptimizeCommand { get; set; }
+
+        public ObservableCollection<FolderSizeInfo> DiskAnalysisResult { get; set; } = new();
+        public ObservableCollection<FolderSizeInfo> LargeFilesResult { get; set; } = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -414,6 +419,7 @@ namespace WassControlSys.ViewModels
                         var drives = DriveInfo.GetDrives().Where(d => d.IsReady && (d.DriveType == DriveType.Fixed || d.DriveType == DriveType.Removable));
                         foreach (var drive in drives)
                         {
+                            var physicalInfo = GetPhysicalDiskInfoForDrive(drive.Name);
                             // Basic info
                             var uDisk = new UnifiedDiskViewModel
                             {
@@ -423,7 +429,9 @@ namespace WassControlSys.ViewModels
                                 FreeSpace = drive.AvailableFreeSpace,
                                 UsedSpace = drive.TotalSize - drive.AvailableFreeSpace,
                                 AnalyzeCommand = AnalyzeDiskSpaceCommand,
-                                OptimizeCommand = new RelayCommand(_ => Process.Start("dfrgui.exe"))
+                                OptimizeCommand = new RelayCommand(_ => Process.Start("dfrgui.exe")),
+                                PnpDeviceId = physicalInfo.PnpDeviceId, // Populate new property
+                                PhysicalDiskIndex = physicalInfo.PhysicalDiskIndex // Populate new property
                             };
                             unifiedList.Add(uDisk);
                         }
@@ -777,28 +785,39 @@ namespace WassControlSys.ViewModels
         {
             if (SelectedUnifiedDisk == null || !IsWindowVisible) return;
 
-            // Update real-time speed (Simulated/Approximated for now as mapping is complex)
-            // In a real scenario we would use PerformanceCounter("LogicalDisk", "Disk Read Bytes/sec", driveLetter)
-            // Here we map global stats if it's the system drive, or 0.
-            // Or better: try to match Health info.
-            
+            var usage = await _monitoringService.GetSystemUsageAsync();
             // Sync Health Info if available
-            if (DiskHealth != null)
+            if (DiskHealth != null && SelectedUnifiedDisk != null)
             {
-                 // Simple matching logic: If we have PhysicalDrive info, assign to first drive or try to match
-                 // This is a simplification.
-                 var health = DiskHealth.FirstOrDefault(); // Take first for valid stats if mapping fails
+                 // Find the DiskHealthInfo matching the selected unified disk using PnpDeviceId or PhysicalDiskIndex
+                 var health = DiskHealth.FirstOrDefault(dh =>
+                    (SelectedUnifiedDisk.PnpDeviceId != null && dh.PnpDeviceId != null && dh.PnpDeviceId.Equals(SelectedUnifiedDisk.PnpDeviceId, StringComparison.OrdinalIgnoreCase)) ||
+                    (SelectedUnifiedDisk.PhysicalDiskIndex.HasValue && dh.PhysicalDiskIndex.HasValue && dh.PhysicalDiskIndex.Value == SelectedUnifiedDisk.PhysicalDiskIndex.Value));
+                 
                  if(health != null)
                  {
                      SelectedUnifiedDisk.HealthStatus = health.SmartOk ? "Saludable" : "Riesgo";
                      SelectedUnifiedDisk.Temperature = health.Temperature > 0 ? $"{health.Temperature}°C" : "--";
                  }
+                 else
+                 {
+                     SelectedUnifiedDisk.HealthStatus = "Desconocido";
+                     SelectedUnifiedDisk.Temperature = "--";
+                 }
             }
             
-            // Map Global Disk Counters to current disk for UI responsiveness (Better than 0)
             // TODO: Implement per-drive counters in MonitoringService
-             SelectedUnifiedDisk.ReadSpeed = _diskReadsPerSec > 0 ? _diskReadsPerSec / 1024 / 1024 : 0;
-             SelectedUnifiedDisk.WriteSpeed = _diskWritesPerSec > 0 ? _diskWritesPerSec / 1024 / 1024 : 0;
+            var diskPerf = usage.DiskPerformanceInfos.FirstOrDefault(dp => dp.DriveLetter.Equals(SelectedUnifiedDisk.DriveLetter, StringComparison.OrdinalIgnoreCase));
+            if (diskPerf != null)
+            {
+                SelectedUnifiedDisk.ReadSpeed = diskPerf.ReadBytesPerSec / (1024.0 * 1024.0); // Convert to MB/s
+                SelectedUnifiedDisk.WriteSpeed = diskPerf.WriteBytesPerSec / (1024.0 * 1024.0); // Convert to MB/s
+            }
+            else
+            {
+                SelectedUnifiedDisk.ReadSpeed = 0;
+                SelectedUnifiedDisk.WriteSpeed = 0;
+            }
         }
         
         private DiskAnalyzerViewModel? _selectedDriveForCleanup;
@@ -1248,6 +1267,45 @@ namespace WassControlSys.ViewModels
             }
         }
 
+        private (string? PnpDeviceId, int? PhysicalDiskIndex) GetPhysicalDiskInfoForDrive(string driveLetter)
+        {
+            try
+            {
+                // Query Win32_LogicalDisk to get the device ID for the drive letter
+                using var logicalDiskSearcher = new System.Management.ManagementObjectSearcher(
+                    $"SELECT DeviceID, Caption FROM Win32_LogicalDisk WHERE Caption = '{driveLetter.TrimEnd('\\')}'"
+                );
+                foreach (var logicalDisk in logicalDiskSearcher.Get())
+                {
+                    string? logicalDeviceId = logicalDisk["DeviceID"]?.ToString(); // e.g., "C:"
+
+                    // Use Win32_LogicalDiskToPartition to link logical disk to partition
+                    using var logicalDiskToPartitionSearcher = new System.Management.ManagementObjectSearcher(
+                        $"ASSOCIATORS OF {{Win32_LogicalDisk.DeviceID='{logicalDeviceId}'}} WHERE AssocClass = Win32_LogicalDiskToPartition"
+                    );
+                    foreach (var partition in logicalDiskToPartitionSearcher.Get())
+                    {
+                        // Use Win32_DiskDriveToDiskPartition to link partition to physical disk
+                        using var diskDriveToPartitionSearcher = new System.Management.ManagementObjectSearcher(
+                            $"ASSOCIATORS OF {{Win32_DiskPartition.DeviceID='{partition["DeviceID"]}'}} WHERE AssocClass = Win32_DiskDriveToDiskPartition"
+                        );
+                        foreach (var physicalDisk in diskDriveToPartitionSearcher.Get())
+                        {
+                            return (
+                                PnpDeviceId: physicalDisk["PNPDeviceID"]?.ToString(),
+                                PhysicalDiskIndex: (int?)(uint?)physicalDisk["Index"] // WMI returns uint
+                            );
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log?.Warn($"Error getting physical disk info for drive {driveLetter}: {ex.Message}");
+            }
+            return (null, null);
+        }
+        
         private bool _cleanRecycleBin = true;
         public bool CleanRecycleBin
         {
@@ -2717,21 +2775,37 @@ namespace WassControlSys.ViewModels
             if (IsBusy) return;
             if (string.IsNullOrEmpty(path)) return;
 
-            var analyzer = DiskAnalyzers.FirstOrDefault(a => a.DriveLetter.Equals(path, StringComparison.OrdinalIgnoreCase));
-            if (analyzer == null) return;
+            // Find the UnifiedDiskViewModel for the given path
+            var unifiedDisk = UnifiedDisks.FirstOrDefault(d => d.DriveLetter.Equals(path, StringComparison.OrdinalIgnoreCase));
+            if (unifiedDisk == null) return;
 
             try
             {
                 IsBusy = true;
                 StatusMessage = $"Analizando {path}...";
-                var items = await _diskAnalyzerService.AnalyzeDirectoryAsync(path);
                 
-                analyzer.AnalysisResult = new ObservableCollection<FolderSizeInfo>(items);
+                // Clear previous results
+                unifiedDisk.DiskAnalysisResult.Clear();
+                unifiedDisk.LargeFilesResult.Clear();
+
+                var analysisResult = await _diskAnalyzerService.AnalyzeDirectoryAsync(path);
+                foreach(var item in analysisResult)
+                {
+                    unifiedDisk.DiskAnalysisResult.Add(item);
+                }
+
+                var largeFilesResult = await _diskAnalyzerService.FindLargeFilesAsync(path, 1024 * 1024 * 50); // > 50 MB
+                foreach(var item in largeFilesResult)
+                {
+                    unifiedDisk.LargeFilesResult.Add(item);
+                }
+
+                StatusMessage = $"Análisis de {path} completado.";
             }
             catch (Exception ex)
             {
-                _log?.Error("Error analizando espacio", ex);
-                await _dialogService.ShowMessage(ex.Message, "Error");
+                _log?.Error($"Error al analizar el disco {path}", ex);
+                await _dialogService.ShowMessage($"Error al analizar: {ex.Message}", "Error");
             }
             finally { IsBusy = false; StatusMessage = ""; }
         }

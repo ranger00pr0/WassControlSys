@@ -3,6 +3,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using WassControlSys.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace WassControlSys.Core
 {
@@ -10,14 +13,18 @@ namespace WassControlSys.Core
     {
         private PerformanceCounter? _cpuCounter;
         private PerformanceCounter[] _cpuCoreCounters = Array.Empty<PerformanceCounter>();
-        private PerformanceCounter? _diskReadsPerSec;
-        private PerformanceCounter? _diskWritesPerSec;
+        private PerformanceCounter? _diskReadsPerSecTotal; // Renamed to avoid confusion with per-disk counters
+        private PerformanceCounter? _diskWritesPerSecTotal; // Renamed
         private PerformanceCounter? _diskAvgQueueLen;
         private PerformanceCounter? _diskSecPerRead;
         private PerformanceCounter? _diskSecPerWrite;
         private PerformanceCounter[] _netSentCounters = Array.Empty<PerformanceCounter>();
         private PerformanceCounter[] _netRecvCounters = Array.Empty<PerformanceCounter>();
         private bool _cpuCounterAvailable;
+
+        // New fields for per-disk performance counters
+        private Dictionary<string, PerformanceCounter>? _perDiskReadsPerSec;
+        private Dictionary<string, PerformanceCounter>? _perDiskWritesPerSec;
 
         public MonitoringService()
         {
@@ -37,18 +44,50 @@ namespace WassControlSys.Core
                 catch { _cpuCoreCounters = Array.Empty<PerformanceCounter>(); }
                 try
                 {
-                    _diskReadsPerSec = new PerformanceCounter("PhysicalDisk", "Disk Reads/sec", "_Total", true);
-                    _diskWritesPerSec = new PerformanceCounter("PhysicalDisk", "Disk Writes/sec", "_Total", true);
+                    _diskReadsPerSecTotal = new PerformanceCounter("PhysicalDisk", "Disk Read Bytes/sec", "_Total", true);
+                    _diskWritesPerSecTotal = new PerformanceCounter("PhysicalDisk", "Disk Write Bytes/sec", "_Total", true);
                     _diskAvgQueueLen = new PerformanceCounter("PhysicalDisk", "Avg. Disk Queue Length", "_Total", true);
                     _diskSecPerRead = new PerformanceCounter("PhysicalDisk", "Avg. Disk sec/Read", "_Total", true);
                     _diskSecPerWrite = new PerformanceCounter("PhysicalDisk", "Avg. Disk sec/Write", "_Total", true);
-                    _ = _diskReadsPerSec.NextValue();
-                    _ = _diskWritesPerSec.NextValue();
+                    _ = _diskReadsPerSecTotal.NextValue();
+                    _ = _diskWritesPerSecTotal.NextValue();
                     _ = _diskAvgQueueLen.NextValue();
                     _ = _diskSecPerRead.NextValue();
                     _ = _diskSecPerWrite.NextValue();
+
+                    // Initialize per-disk performance counters
+                    _perDiskReadsPerSec = new Dictionary<string, PerformanceCounter>();
+                    _perDiskWritesPerSec = new Dictionary<string, PerformanceCounter>();
+                    var physicalDiskCategory = new PerformanceCounterCategory("PhysicalDisk");
+                    foreach (var instanceName in physicalDiskCategory.GetInstanceNames().Where(n => n != "_Total"))
+                    {
+                        string driveLetter = ExtractDriveLetterFromPhysicalDiskInstance(instanceName);
+
+                        if (!string.IsNullOrEmpty(driveLetter) && !_perDiskReadsPerSec.ContainsKey(driveLetter)) // Check if already added
+                        {
+                            try
+                            {
+                                var readCounter = new PerformanceCounter("PhysicalDisk", "Disk Read Bytes/sec", instanceName, true);
+                                var writeCounter = new PerformanceCounter("PhysicalDisk", "Disk Write Bytes/sec", instanceName, true);
+
+                                _perDiskReadsPerSec[driveLetter] = readCounter;
+                                _perDiskWritesPerSec[driveLetter] = writeCounter;
+
+                                // Prime the counters
+                                _ = readCounter.NextValue();
+                                _ = writeCounter.NextValue();
+                            }
+                            catch (Exception ex)
+                            {
+                                // A proper logging mechanism should be used here, this is a placeholder
+                                Debug.WriteLine($"Error initializing per-disk counters for {instanceName}: {ex.Message}");
+                            }
+                        }
+                    }
                 }
-                catch { }
+                catch (Exception ex) {
+                     Debug.WriteLine($"Error initializing total disk counters: {ex.Message}");
+                }
                 try
                 {
                     var nic = new PerformanceCounterCategory("Network Interface");
@@ -60,8 +99,10 @@ namespace WassControlSys.Core
                 }
                 catch { _netSentCounters = Array.Empty<PerformanceCounter>(); _netRecvCounters = Array.Empty<PerformanceCounter>(); }
             }
-            catch
+            catch (Exception ex)
             {
+                // General error during monitoring service initialization
+                Debug.WriteLine($"Error initializing MonitoringService: {ex.Message}");
                 _cpuCounterAvailable = false;
                 _cpuCounter?.Dispose();
                 _cpuCounter = null;
@@ -91,21 +132,42 @@ namespace WassControlSys.Core
                 var usage = new SystemUsage { CpuUsage = cpu, RamUsage = ram, DiskUsage = disk };
                 try
                 {
-                    if (_cpuCoreCounters.Length > 0)
-                    {
-                        usage.CpuPerCore = _cpuCoreCounters.Select(c => (double)Math.Clamp(c.NextValue(), 0, 100)).ToArray();
-                    }
-                }
-                catch { }
-                try
-                {
-                    usage.DiskReadsPerSec = _diskReadsPerSec?.NextValue() ?? 0;
-                    usage.DiskWritesPerSec = _diskWritesPerSec?.NextValue() ?? 0;
+                    usage.DiskReadsPerSec = _diskReadsPerSecTotal?.NextValue() ?? 0;
+                    usage.DiskWritesPerSec = _diskWritesPerSecTotal?.NextValue() ?? 0;
                     usage.DiskAvgQueueLength = _diskAvgQueueLen?.NextValue() ?? 0;
                     usage.DiskReadLatencyMs = (_diskSecPerRead?.NextValue() ?? 0) * 1000.0;
                     usage.DiskWriteLatencyMs = (_diskSecPerWrite?.NextValue() ?? 0) * 1000.0;
+
+                    // Populate per-disk performance infos
+                    if (_perDiskReadsPerSec != null && _perDiskWritesPerSec != null)
+                    {
+                        foreach (var entry in _perDiskReadsPerSec)
+                        {
+                            var driveLetter = entry.Key;
+                            var readCounter = entry.Value;
+                            if (_perDiskWritesPerSec.TryGetValue(driveLetter, out var writeCounter))
+                            {
+                                try
+                                {
+                                    usage.DiskPerformanceInfos.Add(new DiskPerformanceInfo
+                                    {
+                                        DriveLetter = driveLetter,
+                                        InstanceName = readCounter.InstanceName, // Store instance name for potential future use
+                                        ReadBytesPerSec = readCounter.NextValue(),
+                                        WriteBytesPerSec = writeCounter.NextValue()
+                                    });
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"Error getting per-disk performance for {driveLetter}: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
                 }
-                catch { }
+                catch (Exception ex) {
+                     Debug.WriteLine($"Error getting total disk counters: {ex.Message}");
+                }
                 try
                 {
                     usage.NetBytesSentPerSec = _netSentCounters.Sum(c => c.NextValue());
@@ -135,6 +197,24 @@ namespace WassControlSys.Core
             {
                 return 0;
             }
+        }
+
+        private string ExtractDriveLetterFromPhysicalDiskInstance(string instanceName)
+        {
+            // PhysicalDisk instance names can be like "0 C:", "1 D:", "_Total"
+            // We need to extract "C:", "D:"
+            // Regex to find patterns like "X:" (where X is a letter)
+            var match = Regex.Match(instanceName, @"\b([A-Z]):");
+            if (match.Success)
+            {
+                return match.Groups[1].Value + ":"; // Return "C:", "D:"
+            }
+
+            // Fallback for cases where instance name might not contain drive letter
+            // This happens for physical disks that don't have a drive letter assigned (e.g., system reserved, EFI, recovery partitions)
+            // Or for physical disk instances that are not logical drives (e.g., Raid arrays, storage spaces)
+            // For now, return empty. We might need more sophisticated WMI queries to map physical disk to logical drives if this becomes an issue.
+            return string.Empty;
         }
 
         private static double GetMemoryUsagePercent()
@@ -177,11 +257,23 @@ namespace WassControlSys.Core
         {
             _cpuCounter?.Dispose();
             foreach (var c in _cpuCoreCounters) c?.Dispose();
-            _diskReadsPerSec?.Dispose();
-            _diskWritesPerSec?.Dispose();
+            _diskReadsPerSecTotal?.Dispose();
+            _diskWritesPerSecTotal?.Dispose();
             _diskAvgQueueLen?.Dispose();
             _diskSecPerRead?.Dispose();
             _diskSecPerWrite?.Dispose();
+            
+            if (_perDiskReadsPerSec != null)
+            {
+                foreach (var counter in _perDiskReadsPerSec.Values) counter?.Dispose();
+                _perDiskReadsPerSec.Clear();
+            }
+            if (_perDiskWritesPerSec != null)
+            {
+                foreach (var counter in _perDiskWritesPerSec.Values) counter?.Dispose();
+                _perDiskWritesPerSec.Clear();
+            }
+
             foreach (var c in _netSentCounters) c?.Dispose();
             foreach (var c in _netRecvCounters) c?.Dispose();
         }

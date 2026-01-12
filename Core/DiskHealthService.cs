@@ -40,7 +40,10 @@ namespace WassControlSys.Core
                                 Capacity = sizeBytes.HasValue ? FormatBytes(sizeBytes.Value) : "",
                                 SmartOk = status.HasValue && status.Value,
                                 SmartStatusKnown = status.HasValue,
-                                SmartStatus = status.HasValue ? (status.Value ? "OK" : "FALLA") : "N/D"
+                                SmartStatus = status.HasValue ? (status.Value ? "OK" : "FALLA") : "N/D",
+                                Temperature = GetDiskTemperature(index), // Populate temperature
+                                PnpDeviceId = pnpDeviceId, // Populate new property
+                                PhysicalDiskIndex = index // Populate new property
                             });
                         }
                         catch
@@ -58,6 +61,58 @@ namespace WassControlSys.Core
 
                 return list;
             });
+        }
+
+        private static int GetDiskTemperature(int? diskIndex)
+        {
+            if (!diskIndex.HasValue) return 0; // Return 0 if no disk index
+
+            try
+            {
+                // Query for temperature from SMART data.
+                // This typically involves querying a class like MSStorageDriver_ATAPISmartData
+                // or a vendor-specific WMI class.
+                // For simplicity, let's assume we can find a common way, or iterate to find relevant SMART attributes.
+
+                // WMI path for SMART data (often specific to vendors or drivers)
+                string query = $"SELECT CurrentTemperature FROM MSAcpi_ThermalZoneTemperature WHERE InstanceName LIKE '%PhysicalDisk{diskIndex.Value}%'";
+                using var searcher = new System.Management.ManagementObjectSearcher(@"root\WMI", query);
+
+                foreach (var mo in searcher.Get())
+                {
+                    if (mo["CurrentTemperature"] != null)
+                    {
+                        // Temperature is often returned in Kelvin by WMI, convert to Celsius
+                        // Kelvin to Celsius: K - 273.15
+                        return (int)(Convert.ToDouble(mo["CurrentTemperature"]) - 273.15);
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback or log error
+            }
+
+            // Fallback to query Win32_TemperatureProbe (usually for CPU, but can sometimes show other temps)
+            try
+            {
+                string query = $"SELECT CurrentReading FROM Win32_TemperatureProbe WHERE InstanceName LIKE '%Disk{diskIndex.Value}%'";
+                using var searcher = new System.Management.ManagementObjectSearcher(@"root\CIMV2", query);
+                 foreach (var mo in searcher.Get())
+                {
+                    if (mo["CurrentReading"] != null)
+                    {
+                        // Temperature is often returned in Celsius directly
+                        return Convert.ToInt32(mo["CurrentReading"]);
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback or log error
+            }
+
+            return 0; // Default to 0 if temperature cannot be found
         }
 
         private static List<(string InstanceName, bool? SmartOk)> GetSmartEntries()
