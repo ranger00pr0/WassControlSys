@@ -36,7 +36,7 @@ namespace WassControlSys.Core
                     }
 
                     // Perform a single recursive scan
-                    foreach (var file in root.EnumerateFiles("*", SearchOption.AllDirectories))
+                    foreach (var file in EnumerateFilesAndHandleAccessDenied(path))
                     {
                         try
                         {
@@ -52,7 +52,7 @@ namespace WassControlSys.Core
                             }
                             totalSize += file.Length;
                         }
-                        catch (UnauthorizedAccessException) { /* Skip files we can't access */ }
+                        catch (UnauthorizedAccessException) { /* Handled by EnumerateFilesAndHandleAccessDenied */ }
                     }
                 }
                 catch (Exception ex)
@@ -92,6 +92,63 @@ namespace WassControlSys.Core
             });
         }
 
+        private List<FileInfo> EnumerateFilesAndHandleAccessDenied(string path)
+        {
+            var files = new List<FileInfo>();
+            var directoriesToProcess = new Stack<string>();
+            directoriesToProcess.Push(path);
+
+            while (directoriesToProcess.Any())
+            {
+                string currentDir = directoriesToProcess.Pop();
+                try
+                {
+                    // Add files from current directory
+                    foreach (string file in Directory.EnumerateFiles(currentDir))
+                    {
+                        try
+                        {
+                            files.Add(new FileInfo(file));
+                        }
+                        catch (UnauthorizedAccessException ex)
+                        {
+                            _log.Warn($"Acceso denegado a archivo: {file}. Saltando. {ex.Message}");
+                        }
+                        catch (PathTooLongException ex)
+                        {
+                            _log.Warn($"Ruta de archivo demasiado larga: {file}. Saltando. {ex.Message}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Error($"Error inesperado al enumerar archivo {file}: {ex.Message}");
+                        }
+                    }
+
+                    // Add subdirectories to the stack
+                    foreach (string dir in Directory.EnumerateDirectories(currentDir))
+                    {
+                        directoriesToProcess.Push(dir);
+                    }
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    _log.Warn($"Acceso denegado al directorio: {currentDir}. Saltando. {ex.Message}");
+                    // Continue to next directory in stack
+                }
+                catch (PathTooLongException ex)
+                {
+                    _log.Warn($"Ruta demasiado larga para el directorio: {currentDir}. Saltando. {ex.Message}");
+                    // Continue to next directory in stack
+                }
+                catch (Exception ex)
+                {
+                    _log.Error($"Error inesperado al enumerar contenido en {currentDir}: {ex.Message}");
+                    // Continue to next directory in stack
+                }
+            }
+            return files;
+        }
+
         private string? GetTopLevelFolder(string rootPath, string? filePath)
         {
             if (filePath == null || !filePath.StartsWith(rootPath, StringComparison.OrdinalIgnoreCase))
@@ -121,11 +178,11 @@ namespace WassControlSys.Core
                 {
                     if (!Directory.Exists(path)) return result;
 
-                    var di = new DirectoryInfo(path);
-                    var files = di.EnumerateFiles("*", SearchOption.AllDirectories)
+                    // Usar el método robusto para enumerar archivos
+                    var files = EnumerateFilesAndHandleAccessDenied(path)
                                   .Where(f => f.Length >= minSizeInBytes)
                                   .OrderByDescending(f => f.Length)
-                                  .Take(50);
+                                  .Take(50); // Limitar a los 50 más grandes para rendimiento
 
                     foreach (var file in files)
                     {
