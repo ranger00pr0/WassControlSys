@@ -154,13 +154,13 @@
                                                         <Ellipse Stroke="#333" StrokeThickness="10"/>
                                                         <!-- Progreso (Simulado con Arc o simplificado con texto central por ahora) -->
                                                         <!-- Nota: Sin librería de gráficos, usamos texto y barra abajo -->
-                                                        <TextBlock Text="{Binding UsagePercentage, StringFormat={}{0:F0}%}" 
+                                                        <TextBlock Text="{Binding UsagePercentage, StringFormat={}{0:F0}%, Mode=OneWay}" 
                                                                    Foreground="{DynamicResource PrimaryBrush}" 
                                                                    FontSize="28" FontWeight="Bold" 
                                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         <TextBlock Text="Usado" Foreground="#888" FontSize="12" Margin="0,35,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Grid>
-                                                    <ProgressBar Value="{Binding UsagePercentage}" Maximum="100" Height="8" Margin="0,15,0,5" Foreground="{DynamicResource PrimaryBrush}" Background="#333"/>
+                                                    <ProgressBar Value="{Binding UsagePercentage, Mode=OneWay}" Maximum="100" Height="8" Margin="0,15,0,5" Foreground="{DynamicResource PrimaryBrush}" Background="#333"/>
                                                     <Grid>
                                                         <TextBlock Text="{Binding FormattedUsed}" Foreground="#AAA" HorizontalAlignment="Left" FontSize="11"/>
                                                         <TextBlock Text="{Binding FormattedSize}" Foreground="White" HorizontalAlignment="Right" FontSize="11" FontWeight="Bold"/>
