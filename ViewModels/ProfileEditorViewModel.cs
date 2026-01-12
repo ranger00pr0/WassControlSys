@@ -38,6 +38,7 @@ namespace WassControlSys.ViewModels
                     OnPropertyChanged(nameof(CurrentProfileIcon));
                     OnPropertyChanged(nameof(ProfileThemeBrush));
                     OnPropertyChanged(nameof(ProfileHeaderGradient));
+                    OnPropertyChanged(nameof(IsEditingAllowed)); // Notify change
                     LoadProfileConfig(value); 
                 } 
             }
@@ -76,6 +77,7 @@ namespace WassControlSys.ViewModels
             PerformanceMode.Personalizado => "⚙️",
             _ => "📄"
         };
+        public bool IsEditingAllowed => ProfileToEdit == PerformanceMode.Personalizado;
 
         private bool _hasUnsavedChanges;
         public bool HasUnsavedChanges

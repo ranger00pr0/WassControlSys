@@ -16,34 +16,59 @@
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="1.2*"/>
+                    <ColumnDefinition Width="1.4*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Columna Izquierda: Limpieza Rápida -->
-                <StackPanel Grid.Column="0" Margin="0,0,20,0">
-                    <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,20">
-                        <StackPanel>
-                            <TextBlock Text="Limpieza Rápida" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
-                            <TextBlock Text="Libera espacio eliminando archivos residuales que no afectan tus documentos personales." 
-                                       Foreground="#888" FontSize="13" Margin="0,0,0,20" TextWrapping="Wrap"/>
+                <!-- Columna Izquierda: Limpieza -->
+                <ScrollViewer Grid.Column="0" Margin="0,0,20,0">
+                    <StackPanel>
+                        <!-- Limpieza Rápida -->
+                        <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,20">
+                            <StackPanel>
+                                <TextBlock Text="Limpieza Rápida" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                                <TextBlock Text="Libera espacio eliminando archivos residuales seguros." Foreground="#888" FontSize="13" Margin="0,0,0,20" TextWrapping="Wrap"/>
 
-                            <StackPanel Margin="0,0,0,20">
-                                <CheckBox Content="Papelera de Reciclaje" IsChecked="{Binding CleanRecycleBin}" Foreground="White" Margin="0,5"/>
-                                <CheckBox Content="Caché de Navegadores" IsChecked="{Binding CleanBrowserCache}" Foreground="White" Margin="0,5"/>
-                                <CheckBox Content="Archivos Temporales" IsChecked="{Binding CleanSystemTemp}" Foreground="White" Margin="0,5"/>
+                                <StackPanel Margin="0,0,0,20">
+                                    <CheckBox Content="Papelera de Reciclaje" IsChecked="{Binding CleanRecycleBin}" Foreground="White" Margin="0,5"/>
+                                    <CheckBox Content="Caché de Navegadores" IsChecked="{Binding CleanBrowserCache}" Foreground="White" Margin="0,5"/>
+                                    <CheckBox Content="Archivos Temporales" IsChecked="{Binding CleanSystemTemp}" Foreground="White" Margin="0,5"/>
+                                </StackPanel>
+
+                                <Button Content="LIMPIAR AHORA" Command="{Binding CleanTempFilesCommand}" Style="{StaticResource PrimaryButtonStyle}" Height="40" Margin="0,0,0,5"/>
+                                <Button Content="LIMPIEZA PROFUNDA (Sistema)" Command="{Binding CustomSpaceLiberatorCommand}" Style="{StaticResource SecondaryButtonStyle}" Height="35"/>
                             </StackPanel>
+                        </Border>
 
-                            <Button Content="LIMPIAR AHORA" Command="{Binding CleanTempFilesCommand}" Style="{StaticResource PrimaryButtonStyle}" Height="40"/>
-                        </StackPanel>
-                    </Border>
+                        <!-- Limpieza de Descargas -->
+                        <Border Style="{StaticResource AnimatedCardStyle}" Margin="0,0,0,20">
+                            <StackPanel>
+                                <TextBlock Text="Carpeta de Descargas" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                                <TextBlock Text="Eliminar archivos antiguos en Descargas." Foreground="#888" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                                
+                                <TextBlock Text="Seleccione antigüedad para borrar:" Foreground="#AAA" FontSize="12" Margin="0,0,0,5"/>
+                                <UniformGrid Columns="2">
+                                    <Button Content="Más de 1 Mes" Command="{Binding CleanDownloadsCommand}" CommandParameter="1Month" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,5,5"/>
+                                    <Button Content="Más de 1 Semana" Command="{Binding CleanDownloadsCommand}" CommandParameter="1Week" Style="{StaticResource SecondaryButtonStyle}" Margin="5,0,0,5"/>
+                                    <Button Content="Más de 1 Día" Command="{Binding CleanDownloadsCommand}" CommandParameter="1Day" Style="{StaticResource SecondaryButtonStyle}" Margin="0,5,5,0"/>
+                                    <Button Content="TODO" Command="{Binding CleanDownloadsCommand}" CommandParameter="All" Background="#552222" Foreground="#FF9999" BorderThickness="0" Margin="5,5,0,0">
+                                        <Button.Resources>
+                                            <Style TargetType="Border">
+                                                <Setter Property="CornerRadius" Value="6"/>
+                                            </Style>
+                                        </Button.Resources>
+                                    </Button>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
 
-                    <Border Style="{StaticResource AnimatedCardStyle}">
-                        <StackPanel>
-                            <TextBlock Text="Herramientas de Windows" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
-                            <Button Content="Liberador de espacio (Cleanmgr)" Command="{Binding OpenCleanmgrCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,5"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+                        <Border Style="{StaticResource AnimatedCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Herramientas de Windows" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
+                                <Button Content="Liberador de espacio (Cleanmgr)" Command="{Binding OpenCleanmgrCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,5"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- Columna Derecha: Análisis Profundo -->
                 <Border Grid.Column="1" Style="{StaticResource AnimatedCardStyle}">
@@ -55,52 +80,64 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,20">
-                            <TextBlock Text="Análisis de Archivos Grandes" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
-                            <TextBlock Text="Encuentra archivos que ocupan más de 500MB en tus carpetas de Descargas y Escritorio." 
-                                       Foreground="#888" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,15"/>
-                            
-                            <Button Content="ESCANEAR ARCHIVOS" Command="{Binding DeepScanCommand}" Style="{StaticResource SecondaryButtonStyle}" Height="35"/>
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock Text="Análisis de Archivos Grandes" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Archivos > 500MB en Usuario." Foreground="#888" FontSize="13"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                    <Button Content="🗑️ Eliminar Seleccionados" Command="{Binding DeleteSelectedLargeFilesCommand}" Style="{StaticResource SecondaryButtonStyle}" Background="#331111" Margin="0,0,10,0"/>
+                                    <Button Content="🔄 Escanear" Command="{Binding DeepScanCommand}" Style="{StaticResource PrimaryButtonStyle}" Width="100"/>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
 
                         <Rectangle Grid.Row="1" Height="1" Fill="#333" Margin="0,0,0,20"/>
 
                         <!-- Resultados del Análisis -->
                         <Grid Grid.Row="2">
-                            <TextBlock Text="No se han encontrado archivos grandes todavía." Foreground="#555" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            <TextBlock Text="Presione Escanear para iniciar." Foreground="#555" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Visibility="{Binding DeepScanResult.Count, Converter={StaticResource InvertedIntToVisibilityConverter}}"/>
 
                             <ScrollViewer Visibility="{Binding DeepScanResult.Count, Converter={StaticResource IntToVisibilityConverter}}">
                                 <ItemsControl ItemsSource="{Binding DeepScanResult}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="10" Margin="0,0,8,10" Padding="15" BorderBrush="#222" BorderThickness="1">
+                                            <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="10" Margin="0,0,8,10" Padding="10" BorderBrush="#222" BorderThickness="1">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/> <!-- Checkbox -->
+                                                        <ColumnDefinition Width="Auto"/> <!-- Icon -->
+                                                        <ColumnDefinition Width="*"/>    <!-- Path -->
+                                                        <ColumnDefinition Width="Auto"/> <!-- Size -->
+                                                        <ColumnDefinition Width="Auto"/> <!-- Button -->
                                                     </Grid.ColumnDefinitions>
                                                     
-                                                    <Border Background="#2A2A2A" Width="40" Height="40" CornerRadius="8" Margin="0,0,15,0">
-                                                        <TextBlock Text="📄" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,15,0">
+                                                        <CheckBox.LayoutTransform>
+                                                            <ScaleTransform ScaleX="1.2" ScaleY="1.2"/>
+                                                        </CheckBox.LayoutTransform>
+                                                    </CheckBox>
+                                                    
+                                                    <Border Grid.Column="1" Background="#2A2A2A" Width="36" Height="36" CornerRadius="8" Margin="0,0,15,0">
+                                                        <TextBlock Text="📄" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
                                                     
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Path}" Foreground="White" FontSize="13" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxWidth="350"/>
-                                                        <TextBlock Text="Archivo detectado en el escaneo" Foreground="#666" FontSize="11" Margin="0,2,0,0"/>
+                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Path}" Foreground="White" FontSize="13" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxWidth="300" ToolTip="{Binding Path}"/>
+                                                        <TextBlock Text="Archivo Grande" Foreground="#666" FontSize="11" Margin="0,2,0,0"/>
                                                     </StackPanel>
                                                     
-                                                    <TextBlock Grid.Column="2" Text="{Binding FormattedSize}" Foreground="{DynamicResource PrimaryBrush}" FontSize="15" FontWeight="Black" VerticalAlignment="Center" Margin="15,0"/>
+                                                    <TextBlock Grid.Column="3" Text="{Binding FormattedSize}" Foreground="{DynamicResource PrimaryBrush}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0"/>
                                                     
-                                                    <Button Grid.Column="3" 
+                                                    <Button Grid.Column="4" 
                                                             Command="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                                             CommandParameter="{Binding Path}"
-                                                            Content="📂 Abrir" 
+                                                            Content="📂" 
+                                                            ToolTip="Abrir Ubicación"
                                                             Style="{StaticResource SecondaryButtonStyle}" 
-                                                            Padding="12,5" 
-                                                            FontSize="11" 
-                                                            Height="30"/>
+                                                            Padding="10,5" 
+                                                            Width="40"/>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -112,4 +149,5 @@
                 </Border>
             </Grid>
         </Grid>
+
 </UserControl>

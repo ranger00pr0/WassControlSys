@@ -106,10 +106,22 @@
                                 <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
                                 <DataGridTextColumn Header="Versión Actual" Binding="{Binding CurrentVersion}" Width="120"/>
                                 <DataGridTextColumn Header="Nueva Versión" Binding="{Binding AvailableVersion}" Width="120"/>
-                                <DataGridTemplateColumn Header="Acción" Width="100">
+                                    <DataGridTemplateColumn Header="Acción" Width="200">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="Actualizar" Command="{Binding DataContext.UpdateAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding Id}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,2"/>
+                                            <Grid>
+                                                <Button Content="Actualizar" 
+                                                        Command="{Binding DataContext.UpdateAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                                        CommandParameter="{Binding Id}" 
+                                                        Style="{StaticResource SecondaryButtonStyle}" 
+                                                        Padding="10,2"
+                                                        Visibility="{Binding IsUpdating, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"/>
+                                                
+                                                <StackPanel Visibility="{Binding IsUpdating, Converter={StaticResource BooleanToVisibilityConverter}}" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding UpdateStatusMessage}" FontSize="10" Foreground="#CCC" Margin="0,0,0,2" TextTrimming="CharacterEllipsis"/>
+                                                    <ProgressBar Value="{Binding UpdateProgress}" Maximum="100" Height="6" BorderThickness="0" Background="#333" Foreground="{DynamicResource PrimaryBrush}"/>
+                                                </StackPanel>
+                                            </Grid>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

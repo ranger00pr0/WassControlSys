@@ -9,5 +9,6 @@ namespace WassControlSys.Models
         public bool SmartOk { get; set; }
         public bool SmartStatusKnown { get; set; }
         public string SmartStatus { get; set; } = string.Empty;
+        public int Temperature { get; set; } // Added for compatibility
     }
 }

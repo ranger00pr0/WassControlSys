@@ -69,7 +69,7 @@
         </Border>
 
         <!-- Configuración en Tarjetas Tematizadas -->
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding IsEditingAllowed}">
             <UniformGrid Columns="2">
                 <!-- Tarjeta: Servicios y Sistema -->
                 <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="10">

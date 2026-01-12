@@ -33,14 +33,20 @@ public partial class MainWindow : Window
         // Actualizar el icono del botón de maximizar según el estado de la ventana
 
 
-        this.IsVisibleChanged += (s, e) => 
+
+        void UpdateVMVisibility()
         {
             if (this.DataContext is MainViewModel vm)
             {
-                vm.IsWindowVisible = this.IsVisible;
+                // App is "Visible" only if Window is Visible AND Not Minimized
+                vm.IsWindowVisible = this.IsVisible && this.WindowState != WindowState.Minimized;
             }
-            _logService.Info($"MainWindow IsVisibleChanged event - IsVisible: {this.IsVisible}");
-        };
+             _logService.Info($"Window State Changed - Visible: {this.IsVisible}, State: {this.WindowState}");
+        }
+
+        this.IsVisibleChanged += (s, e) => UpdateVMVisibility();
+        this.StateChanged += (s, e) => UpdateVMVisibility();
+
 
         // SourceInitialized se ejecuta ANTES de que la ventana se muestre
         this.SourceInitialized += (s, e) =>

@@ -77,7 +77,9 @@ namespace WassControlSys.Core
             var items = new List<StartupItem>();
             string[] runKeys = {
                 @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce"
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run", // 32-bit apps
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce" // 32-bit apps
             };
 
             foreach (var keyPath in runKeys)

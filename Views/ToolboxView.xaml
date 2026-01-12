@@ -71,19 +71,19 @@
                     <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="218">
                         <StackPanel>
                             <TextBlock Text="📈 Monitor de Recursos" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <Button Command="{Binding RunToolCommand}" CommandParameter="resmon.exe" Content="Abrir Monitor" Style="{StaticResource SecondaryButtonStyle}"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="resmon.exe" Content="Abrir Monitor" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Monitor detallado de CPU, RAM, Disco y Red"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="218">
                         <StackPanel>
                             <TextBlock Text="📅 Visor de Eventos" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <Button Command="{Binding RunToolCommand}" CommandParameter="eventvwr.msc" Content="Abrir Visor" Style="{StaticResource SecondaryButtonStyle}"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="eventvwr.msc" Content="Abrir Visor" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Logs del sistema y aplicaciones"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource AnimatedCardStyle}" Margin="5" Width="218">
                         <StackPanel>
                             <TextBlock Text="🖥️ Control de Energía" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <Button Command="{Binding RunToolCommand}" CommandParameter="powercfg.cpl" Content="Planes Energía" Style="{StaticResource SecondaryButtonStyle}"/>
+                            <Button Command="{Binding RunToolCommand}" CommandParameter="powercfg.cpl" Content="Planes Energía" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Configurar suspensión y rendimiento de energía"/>
                         </StackPanel>
                     </Border>
                 </UniformGrid>

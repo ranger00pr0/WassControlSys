@@ -109,6 +109,13 @@
                         <Button Command="{Binding ChangeAccentColorCommand}" CommandParameter="#6366F1" Width="30" Height="30" Margin="0,0,10,10" ToolTip="Indigo">
                             <Button.Template><ControlTemplate TargetType="Button"><Border Background="#6366F1" CornerRadius="15"/></ControlTemplate></Button.Template>
                         </Button>
+                        
+                        <!-- Custom Hex Input -->
+                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,10">
+                            <TextBlock Text="#" Foreground="#888" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="14"/>
+                            <TextBox x:Name="HexInput" Text="" Width="80" Height="30" VerticalContentAlignment="Center" Padding="5,0" Background="#222" Foreground="White" BorderThickness="1" BorderBrush="#444"/>
+                            <Button Content="Aplicar" Command="{Binding ChangeAccentColorCommand}" CommandParameter="{Binding Text, ElementName=HexInput}" Style="{StaticResource SecondaryButtonStyle}" Margin="5,0,0,0" Height="30" Padding="10,0"/>
+                        </StackPanel>
                     </WrapPanel>
 
                     <Separator Background="#222" Margin="0,15"/>

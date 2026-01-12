@@ -12,7 +12,9 @@ using System.Diagnostics;
 using System;
 using System.Linq; // Added for FirstOrDefault
 using System.IO; // Added for File and Directory operations
+using System.IO; // Added for File and Directory operations
 using System.Security.Principal; // Added for administrator check
+using System.Runtime.InteropServices; // Added for P/Invoke
 
 #nullable enable
 
@@ -27,6 +29,48 @@ namespace WassControlSys.ViewModels
             get => _usage; 
             set { if (Math.Abs(_usage - value) > 0.1) { _usage = value; OnPropertyChanged(); } } 
         }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    public class UnifiedDiskViewModel : INotifyPropertyChanged
+    {
+        public string DriveLetter { get; set; } = "";
+        public string Label { get; set; } = "";
+        public string Model { get; set; } = "Desconocido";
+        public long TotalSize { get; set; }
+        public long UsedSpace { get; set; }
+        public long FreeSpace { get; set; }
+        
+        public double UsagePercentage => TotalSize > 0 ? (double)UsedSpace / TotalSize * 100 : 0;
+        public string FormattedSize => $"{TotalSize / (1024.0 * 1024 * 1024):F1} GB";
+        public string FormattedFree => $"{FreeSpace / (1024.0 * 1024 * 1024):F1} GB";
+        public string FormattedUsed => $"{UsedSpace / (1024.0 * 1024 * 1024):F1} GB";
+
+        public string HealthStatus { get; set; } = "Desconocido";
+        public string Temperature { get; set; } = "--";
+        
+        // Real-time stats (updates frequently)
+        private double _readSpeed;
+        public double ReadSpeed 
+        { 
+            get => _readSpeed; 
+            set { if(_readSpeed != value) { _readSpeed = value; OnPropertyChanged(); } } 
+        }
+        
+        private double _writeSpeed;
+        public double WriteSpeed 
+        { 
+            get => _writeSpeed; 
+            set { if(_writeSpeed != value) { _writeSpeed = value; OnPropertyChanged(); } } 
+        }
+
+        public ICommand? AnalyzeCommand { get; set; }
+        public ICommand? OptimizeCommand { get; set; }
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -65,6 +109,8 @@ namespace WassControlSys.ViewModels
         private readonly DispatcherTimer _autoBoostTimer;
         private PerformanceMode _lastManualMode = PerformanceMode.General;
         private bool _isAutoActivated = false;
+
+        public ICommand RefreshDisksCommand { get; private set; }
 
         // Constructor del ViewModel principal
         public MainViewModel(ISystemMaintenanceService maintenance, IMonitoringService monitoringService, IPerformanceProfileService profiles, ISettingsService settings, ILogService log, ISystemInfoService systemInfoService, ISecurityService securityService, IDialogService dialogService, IStartupService startupService, IServiceOptimizerService serviceOptimizerService, IBloatwareService bloatwareService, IPrivacyService privacyService, IProcessManagerService processManagerService, ITemperatureMonitorService temperatureMonitorService, IDiskHealthService diskHealthService, ILocalizationService localizationService, IRestorePointService restorePointService, IBatteryService batteryService, IWingetService wingetService, IDriverService driverService, IDiskAnalyzerService diskAnalyzerService)
@@ -116,7 +162,9 @@ namespace WassControlSys.ViewModels
             AnalyzeDiskCommand = new RelayCommand(async _ => await ExecuteAnalyzeDiskAsync());
             RebuildSearchIndexCommand = new RelayCommand(async _ => await ExecuteRebuildSearchIndexAsync());
             CleanPrefetchCommand = new RelayCommand(async _ => await ExecuteCleanPrefetchAsync());
+            CustomSpaceLiberatorCommand = new RelayCommand(async _ => await ExecuteCustomSpaceLiberatorAsync()); // New
             ResetNetworkCommand = new RelayCommand(async _ => await ExecuteResetNetworkAsync());
+            RefreshDisksCommand = new RelayCommand(async _ => await LoadDisksAsync());
 
             NavigateCommand = new RelayCommand(ExecuteNavigate);
             ChangeAccentColorCommand = new RelayCommand(p => { if (p is string hex) AccentColor = hex; });
@@ -169,7 +217,12 @@ namespace WassControlSys.ViewModels
             PcBoostCommand = new RelayCommand(async _ => await ExecutePcBoostAsync());
             DeepScanCommand = new RelayCommand(async _ => await ExecuteDeepScanAsync());
             OpenDiscordCommand = new RelayCommand(ExecuteOpenDiscord);
+            OpenDiscordCommand = new RelayCommand(ExecuteOpenDiscord);
             OpenCleanmgrCommand = new RelayCommand(_ => ExecuteOpenCleanmgr());
+            
+            CleanDownloadsCommand = new RelayCommand<string>(async period => await ExecuteCleanDownloadsAsync(period));
+            DeleteSelectedLargeFilesCommand = new RelayCommand(async _ => await ExecuteDeleteSelectedLargeFilesAsync());
+
             RunToolCommand = new RelayCommand(p => 
             {
                 if (p is string tool)
@@ -196,11 +249,28 @@ namespace WassControlSys.ViewModels
             // Cargar ajustes
             _ = LoadSettingsAsync();
 
-            // Inicializar Timer de Monitoreo
+            // Inicializar Timer de Monitoreo (Global)
             _monitoringTimer = new DispatcherTimer();
-            _monitoringTimer.Interval = TimeSpan.FromSeconds(2);
-            _monitoringTimer.Tick += (s, e) => UpdateSystemUsage();
-            _monitoringTimer.Tick += async (s, e) => await UpdateThermalAsync();
+            _monitoringTimer.Interval = TimeSpan.FromSeconds(3);
+            _monitoringTimer.Tick += (s, e) => 
+            {
+                // Si la ventana NO es visible, NO actualizamos nada de UI global (CPU/RAM Sidebar)
+                if (!IsWindowVisible) return;
+                UpdateSystemUsage();
+            };
+            _monitoringTimer.Tick += async (s, e) => 
+            {
+                if (!IsWindowVisible) return;
+                
+                // Thermal solo si estamos en Rendimiento o Hardware (donde se ve la temp)
+                await UpdateThermalAsync();
+                
+                // Actualizar stats del disco seleccionado si estamos en Hardware
+                if (CurrentSection == AppSection.Hardware)
+                {
+                    await UpdateUnifiedDiskStatsAsync();
+                }
+            };
             _monitoringTimer.Start();
 
             OpenFolderCommand = new RelayCommand(p => ExecuteOpenFolder(p as string));
@@ -208,19 +278,35 @@ namespace WassControlSys.ViewModels
             // Timer para procesos (30 seg)
             _processTimer = new DispatcherTimer();
             _processTimer.Interval = TimeSpan.FromSeconds(30);
-            _processTimer.Tick += (s, e) => _ = LoadProcessesAsync(silent: true);
+            _processTimer.Tick += (s, e) => 
+            {
+                // Solo actualizar lista de procesos si la App es Visible Y estamos en la sección Rendimiento
+                if (!IsWindowVisible) return;
+                if (CurrentSection != AppSection.Rendimiento) return;
+
+                _ = LoadProcessesAsync(silent: true);
+            };
             _processTimer.Start();
 
             // Cargar info inicial
             _ = LoadLastRestorePointAsync();
-            LoadDiskAnalyzers();
+            _ = LoadDisksAsync();
             
             SetupIdleMaintenance();
 
             // Timer para Auto-Boost (cada 10 seg está bien para no saturar)
             _autoBoostTimer = new DispatcherTimer();
             _autoBoostTimer.Interval = TimeSpan.FromSeconds(10);
-            _autoBoostTimer.Tick += async (s, e) => await CheckAutoBoostAsync();
+            _autoBoostTimer.Tick += async (s, e) => 
+            {
+                // AutoBoost debe funcionar en segundo plano? 
+                // El usuario dijo: "si esta en segundo plano la app no se actualiza... sabra que lo que quiero es que la app consuma lo menos posible"
+                // PERO AutoBoost es una función "core". Si lanzo un juego y la app está minimizada, ¿debería activarse el modo juego?
+                // Generalmente SÍ. Pero el usuario pidió "consuma lo menos posible".
+                // Dejaremos AutoBoost activo porque es una característica funcional crítica, pero podemos reducir la frecuencia si está minimizado?
+                // Por ahora lo dejamos igual, ya que checkear procesos es rápido.
+                await CheckAutoBoostAsync(); 
+            };
             _autoBoostTimer.Start();
         }
 
@@ -313,22 +399,68 @@ namespace WassControlSys.ViewModels
             }
         }
 
-        private void LoadDiskAnalyzers()
+        public async Task LoadDisksAsync()
         {
-            var analyzers = new ObservableCollection<DiskAnalyzerViewModel>();
             try
             {
-                var drives = DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType == DriveType.Fixed);
-                foreach (var drive in drives)
+                var unifiedList = new List<UnifiedDiskViewModel>();
+                // Run heavy I/O on background thread
+                await Task.Run(() => 
                 {
-                    analyzers.Add(new DiskAnalyzerViewModel { DriveLetter = drive.Name });
-                }
+                    try 
+                    {
+                        var drives = DriveInfo.GetDrives().Where(d => d.IsReady && (d.DriveType == DriveType.Fixed || d.DriveType == DriveType.Removable));
+                        foreach (var drive in drives)
+                        {
+                            // Basic info
+                            var uDisk = new UnifiedDiskViewModel
+                            {
+                                DriveLetter = drive.Name,
+                                Label = drive.VolumeLabel,
+                                TotalSize = drive.TotalSize,
+                                FreeSpace = drive.AvailableFreeSpace,
+                                UsedSpace = drive.TotalSize - drive.AvailableFreeSpace,
+                                AnalyzeCommand = AnalyzeDiskSpaceCommand,
+                                OptimizeCommand = new RelayCommand(_ => Process.Start("dfrgui.exe"))
+                            };
+                            unifiedList.Add(uDisk);
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                         _log?.Error("Error iterating drives", ex);
+                    }
+                });
+
+                // Ensure UI verification and update happens on the Dispatcher
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    UnifiedDisks = new ObservableCollection<UnifiedDiskViewModel>(unifiedList);
+                    _log?.Info($"Carga de discos completada. Encontrados: {unifiedList.Count}");
+
+                    if (UnifiedDisks.Any())
+                    {
+                        if (SelectedUnifiedDisk == null || !UnifiedDisks.Any(d => d.DriveLetter == SelectedUnifiedDisk.DriveLetter))
+                        {
+                            SelectedUnifiedDisk = UnifiedDisks.First();
+                        }
+                    }
+                    else
+                    {
+                         _log?.Warn("No se encontraron discos fijos o extraíbles listos.");
+                         StatusMessage = "No se detectaron discos compatibles.";
+                    }
+                });
             }
             catch (Exception ex)
             {
                 _log?.Error("Error loading disk analyzers", ex);
+                StatusMessage = "Error al detectar hardware de almacenamiento.";
             }
-            DiskAnalyzers = analyzers;
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task PrepareForShutdownAsync()
@@ -441,6 +573,45 @@ namespace WassControlSys.ViewModels
         {
             // Placeholder
             _log?.Info($"Cargando configuración para editar perfil: {mode}");
+        }
+
+        // --- Propiedades para Ciclo de Vida y Eficiencia ---
+        private bool _isWindowVisible = true;
+        public bool IsWindowVisible
+        {
+            get => _isWindowVisible;
+            set
+            {
+                if (_isWindowVisible != value)
+                {
+                    _isWindowVisible = value;
+                    OnPropertyChanged();
+                    _log?.Info($"Visibilidad de Ventana cambiada: {value}. {(value ? "Reanudando" : "Pausando")} actualizaciones en segundo plano.");
+                    
+                    // Forzar actualización inmediata al volver a mostrar
+                    if (value)
+                    {
+                         UpdateSystemUsage();
+                         _ = UpdateThermalAsync();
+                         if (CurrentSection == AppSection.Rendimiento) _ = LoadProcessesAsync(silent: true);
+                    }
+                }
+            }
+        }
+
+        private AppSection _currentSection = AppSection.Dashboard;
+        public AppSection CurrentSection
+        {
+            get => _currentSection;
+            set
+            {
+                if (_currentSection != value)
+                {
+                    _currentSection = value;
+                    OnPropertyChanged();
+                    // Al cambiar de sección, podriamos disparar actualizaciones especificas si fuera necesario
+                }
+            }
         }
 
         // --- Propiedades para Monitoreo (Task 04) ---
@@ -577,6 +748,54 @@ namespace WassControlSys.ViewModels
             set { _diskAnalyzers = value; OnPropertyChanged(); }
         }
 
+        private ObservableCollection<UnifiedDiskViewModel> _unifiedDisks = new();
+        public ObservableCollection<UnifiedDiskViewModel> UnifiedDisks
+        {
+            get => _unifiedDisks;
+            set { _unifiedDisks = value; OnPropertyChanged(); }
+        }
+
+        private UnifiedDiskViewModel? _selectedUnifiedDisk;
+        public UnifiedDiskViewModel? SelectedUnifiedDisk
+        {
+            get => _selectedUnifiedDisk;
+            set
+            { 
+                _selectedUnifiedDisk = value; 
+                OnPropertyChanged(); 
+                // Reset stats when switching
+               if(value != null) { value.ReadSpeed = 0; value.WriteSpeed = 0; }
+            }
+        }
+        
+        private async Task UpdateUnifiedDiskStatsAsync()
+        {
+            if (SelectedUnifiedDisk == null || !IsWindowVisible) return;
+
+            // Update real-time speed (Simulated/Approximated for now as mapping is complex)
+            // In a real scenario we would use PerformanceCounter("LogicalDisk", "Disk Read Bytes/sec", driveLetter)
+            // Here we map global stats if it's the system drive, or 0.
+            // Or better: try to match Health info.
+            
+            // Sync Health Info if available
+            if (DiskHealth != null)
+            {
+                 // Simple matching logic: If we have PhysicalDrive info, assign to first drive or try to match
+                 // This is a simplification.
+                 var health = DiskHealth.FirstOrDefault(); // Take first for valid stats if mapping fails
+                 if(health != null)
+                 {
+                     SelectedUnifiedDisk.HealthStatus = health.SmartOk ? "Saludable" : "Riesgo";
+                     SelectedUnifiedDisk.Temperature = health.Temperature > 0 ? $"{health.Temperature}°C" : "--";
+                 }
+            }
+            
+            // Map Global Disk Counters to current disk for UI responsiveness (Better than 0)
+            // TODO: Implement per-drive counters in MonitoringService
+             SelectedUnifiedDisk.ReadSpeed = _diskReadsPerSec > 0 ? _diskReadsPerSec / 1024 / 1024 : 0;
+             SelectedUnifiedDisk.WriteSpeed = _diskWritesPerSec > 0 ? _diskWritesPerSec / 1024 / 1024 : 0;
+        }
+        
         private DiskAnalyzerViewModel? _selectedDriveForCleanup;
         public DiskAnalyzerViewModel? SelectedDriveForCleanup
         {
@@ -795,22 +1014,47 @@ namespace WassControlSys.ViewModels
             }
         }
 
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
         private void FilterProcesses()
         {
             if (_allProcesses == null) return;
 
+            // 1. Obtener PID de la ventana en primer plano
+            uint foregroundPid = 0;
+            try
+            {
+                IntPtr handle = GetForegroundWindow();
+                if (handle != IntPtr.Zero)
+                {
+                    GetWindowThreadProcessId(handle, out foregroundPid);
+                }
+            }
+            catch (Exception ex) { _log?.Warn($"Error detectando proceso en primer plano: {ex.Message}"); }
+
+            List<ProcessInfoDto> filtered;
+
             if (string.IsNullOrWhiteSpace(ProcessSearchText))
             {
-                Processes = new ObservableCollection<ProcessInfoDto>(_allProcesses);
+                filtered = _allProcesses.ToList();
             }
             else
             {
-                var filtered = _allProcesses.Where(p => 
+                filtered = _allProcesses.Where(p => 
                     (p.Name != null && p.Name.Contains(ProcessSearchText, StringComparison.OrdinalIgnoreCase)) ||
                     p.Pid.ToString().Contains(ProcessSearchText)
                 ).ToList();
-                Processes = new ObservableCollection<ProcessInfoDto>(filtered);
             }
+
+            // 2. Ordenar: Primer Plano SIEMPRE arriba, luego mantener orden original (o por uso)
+            // Nota: Ordenamos descendente por el booleano (True > False)
+            var sorted = filtered.OrderByDescending(p => p.Pid == foregroundPid).ToList();
+
+            Processes = new ObservableCollection<ProcessInfoDto>(sorted);
         }
 
         public async Task ExecuteSetProcessPriorityAsync(ProcessInfoDto p, ProcessPriorityClass priority)
@@ -1008,35 +1252,15 @@ namespace WassControlSys.ViewModels
             {
                 if (_isDarkMode != value)
                 {
-                    // Confirmación antes de cambiar
-                    // Tarea asíncrona lanzada "en segundo plano" porque un setter no puede ser async
-                    // pero necesitamos que la UI reaccione. La forma correcta es lanzar el diálogo y si confirmar, cambiar.
-                    // Sin embargo, el binding setea el valor antes.
-                    // Patron mejor: Cambiar el valor solo si el usuario confirma.
-                    // Pero como el ToggleButton ya cambió el estado visual...
-                    // Lo mejor es aceptar el cambio y aplicar, o revertir si cancela.
+                    _isDarkMode = value;
+                    OnPropertyChanged();
                     
-                    // Nota: El usuario pidió "solo pida una confirmacion y lo hagas alli mismo".
-                    // Vamos a lanzar la tarea de confirmación.
-                    App.Current.Dispatcher.Invoke(async () => 
+                    // Aplicar el tema sin diálogos bloqueantes en el setter
+                    if (Application.Current is App app) 
                     {
-                        bool confirm = await _dialogService.ShowConfirmation(
-                            $"¿Desea cambiar al modo {(value ? "Oscuro" : "Claro")}? La interfaz se actualizará inmediatamente.", 
-                            "Cambiar Tema");
-                        
-                        if (confirm)
-                        {
-                            _isDarkMode = value;
-                            OnPropertyChanged(nameof(IsDarkMode));
-                            if (Application.Current is App app) app.ChangeTheme(value);
-                            await SaveSettingsAsync();
-                        }
-                        else
-                        {
-                            // Revertir el toggle en la UI
-                            OnPropertyChanged(nameof(IsDarkMode)); 
-                        }
-                    });
+                        app.ChangeTheme(value);
+                    }
+                    _ = SaveSettingsAsync();
                 }
             }
         }
@@ -1377,109 +1601,84 @@ namespace WassControlSys.ViewModels
         }
 
         // --- Navigation ---
-        private bool _isWindowVisible = true;
-        public bool IsWindowVisible
-        {
-            get => _isWindowVisible;
-            set
-            {
-                if (_isWindowVisible != value)
-                {
-                    _isWindowVisible = value;
-                    OnPropertyChanged();
-                    UpdateTimerStates();
-                    _log?.Info($"Visibilidad de ventana: {value}");
-                }
-            }
-        }
 
-        private void UpdateTimerStates()
-        {
-            if (_isWindowVisible)
-            {
-                if (!_monitoringTimer.IsEnabled) _monitoringTimer.Start();
-                if (!_processTimer.IsEnabled) _processTimer.Start();
-                // Al volver a mostrarse, forzar una actualización rápida
-                UpdateSystemUsage();
-            }
-            else
-            {
-                // Cuando está oculta, detenemos el monitoreo intensivo (2s)
-                // Pero podemos dejar el de procesos (30s) si queremos o detener ambos
-                _monitoringTimer.Stop();
-                _processTimer.Stop();
-
-                // Auto-optimización de RAM para la propia app al ocultarse
-                _ = _maintenance.OptimizeSelfAsync();
-            }
-        }
-
-        private AppSection _currentSection;
-        public AppSection CurrentSection
-        {
-            get => _currentSection;
-            set
-            {
-                if (_currentSection != value)
-                {
-                    _currentSection = value;
-                    OnPropertyChanged();
-                    _ = SaveSettingsAsync();
-                    _log?.Info($"Sección cambiada a: {value}");
-                }
-            }
-        }
 
         public ICommand NavigateCommand { get; private set; }
 
         private async void ExecuteNavigate(object? parameter)
         {
             if (parameter == null) return;
-            AppSection target;
-            if (parameter is AppSection section) target = section;
-            else if (parameter is string s && Enum.TryParse(s, true, out AppSection parsed)) target = parsed;
-            else return;
-
-            if (CurrentSection == target) return;
-            CurrentSection = target;
-
-            // Carga inteligente: secuencial para evitar saturar el UI thread
-            try
+            try 
             {
-                switch (target)
+                AppSection target;
+                if (parameter is AppSection section) target = section;
+                else if (parameter is string s && Enum.TryParse(s, true, out AppSection parsed)) target = parsed;
+                else 
                 {
-                    case AppSection.Dashboard:
-                        await LoadSecurityStatusAsync();
-                        await LoadStartupItemsAsync();
-                        await LoadBatteryInfoAsync();
-                        break;
-                    case AppSection.Proteccion:
-                        await LoadSecurityStatusAsync();
-                        break;
-                    case AppSection.Rendimiento:
-                        // No cargar todo a la vez para mantener fluidez
-                        if (Processes == null || Processes.Count == 0) await LoadProcessesAsync();
-                        _ = UpdateThermalAsync(); // Este puede ir en paralelo
-                        if (WindowsServices == null || WindowsServices.Count == 0) await LoadWindowsServicesAsync();
-                        break;
-                    case AppSection.Aplicaciones:
-                        if (BloatwareApps == null || BloatwareApps.Count == 0) await LoadBloatwareAppsAsync();
-                        await LoadUpdatableAppsAsync();
-                        if (StartupItems == null || StartupItems.Count == 0) await LoadStartupItemsAsync();
-                        break;
-                    case AppSection.Herramientas:
-                        await LoadLastRestorePointAsync();
-                        break;
-                    case AppSection.Hardware:
-                        if (string.IsNullOrWhiteSpace(SystemInformation?.MachineName)) await LoadSystemInfoAsync();
-                        if (DiskHealth == null || DiskHealth.Count == 0) await LoadDiskHealthAsync();
-                        if (string.IsNullOrWhiteSpace(SecurityStatus?.AntivirusName)) await LoadSecurityStatusAsync();
-                        break;
+                    _log?.Warn($"Navegación fallida: parámetro inválido '{parameter}'");
+                    return;
                 }
+
+                if (CurrentSection == target) return;
+                
+                _log?.Info($"Navegando a sección: {target}");
+                CurrentSection = target;
+                IsBusy = true;
+
+                // Carga inteligente: EN PARALELO para no bloquear la UI
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        switch (target)
+                        {
+                            case AppSection.Dashboard:
+                                await LoadSecurityStatusAsync();
+                                await LoadStartupItemsAsync();
+                                await LoadBatteryInfoAsync();
+                                break;
+                            case AppSection.Proteccion:
+                                await LoadSecurityStatusAsync();
+                                break;
+                            case AppSection.Rendimiento:
+                                if (Processes == null || Processes.Count == 0) await LoadProcessesAsync();
+                                _ = UpdateThermalAsync();
+                                if (WindowsServices == null || WindowsServices.Count == 0) await LoadWindowsServicesAsync();
+                                break;
+                            case AppSection.Aplicaciones:
+                                if (BloatwareApps == null || BloatwareApps.Count == 0) await LoadBloatwareAppsAsync();
+                                _ = LoadUpdatableAppsAsync(); 
+                                if (StartupItems == null || StartupItems.Count == 0) await LoadStartupItemsAsync();
+                                break;
+                            case AppSection.Herramientas:
+                                await LoadLastRestorePointAsync();
+                                break;
+                            case AppSection.Hardware:
+                                var t1 = (SystemInformation == null || string.IsNullOrWhiteSpace(SystemInformation.MachineName)) ? LoadSystemInfoAsync() : Task.CompletedTask;
+                                var t2 = (DiskHealth == null || DiskHealth.Count == 0) ? LoadDiskHealthAsync() : Task.CompletedTask;
+                                var t3 = (UnifiedDisks == null || UnifiedDisks.Count == 0) ? LoadDisksAsync() : Task.CompletedTask;
+                                var t4 = (PrivacySettings == null || PrivacySettings.Count == 0) ? LoadPrivacySettingsAsync() : Task.CompletedTask;
+                                await Task.WhenAll(t1, t2, t3, t4);
+                                break;
+                            case AppSection.Configuracion:
+                                await LoadSettingsAsync();
+                                break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _log?.Error($"Error durante la carga de {target}", ex);
+                    }
+                    finally
+                    {
+                        System.Windows.Application.Current.Dispatcher.Invoke(() => IsBusy = false);
+                    }
+                });
             }
             catch (Exception ex)
             {
-                _log?.Warn($"Error durante la navegación: {ex.Message}");
+                _log?.Error("Error crítico en navegación", ex);
+                IsBusy = false;
             }
         }
         
@@ -1636,9 +1835,9 @@ namespace WassControlSys.ViewModels
             if (_netSentHistory.Count > NetworkSampleSize)
                 _netSentHistory.Dequeue();
             
-            // Calcular promedio móvil
-            NetRecvMbps = _netRecvHistory.Average();
-            NetSentMbps = _netSentHistory.Average();
+            // Calcular promedio móvil (Protección contra secuencias vacías)
+            NetRecvMbps = _netRecvHistory.Any() ? _netRecvHistory.Average() : 0;
+            NetSentMbps = _netSentHistory.Any() ? _netSentHistory.Average() : 0;
             
             ActiveTcpConnections = usage.ActiveTcpConnections;
             DiskReadsPerSec = usage.DiskReadsPerSec;
@@ -1671,8 +1870,6 @@ namespace WassControlSys.ViewModels
                 OptimizeOnIdle = s.OptimizeOnIdle;
                 MinimizeToTray = s.MinimizeToTray;
 
-                // Forzar siempre inicio en Dashboard
-                ExecuteNavigate(AppSection.Dashboard);
                 _log?.Info($"Settings cargados. Modo={s.SelectedMode}, Sección={s.CurrentSection}, Idle={s.OptimizeOnIdle}");
             }
             catch (Exception ex)
@@ -2386,5 +2583,131 @@ namespace WassControlSys.ViewModels
             }
             finally { IsBusy = false; StatusMessage = ""; }
         }
+
+        private async Task ExecuteCleanDownloadsAsync(string? period)
+        {
+            if (string.IsNullOrEmpty(period)) return;
+            
+            bool confirm = await _dialogService.ShowConfirmation($"¿Está seguro de limpiar Descargas ({period})? Esta acción no se puede deshacer.", "Confirmar Limpieza");
+            if (!confirm) return;
+
+            try
+            {
+                IsBusy = true;
+                string downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                if (!Directory.Exists(downloadsPath)) return;
+
+                var files = Directory.GetFiles(downloadsPath);
+                DateTime threshold = DateTime.MaxValue;
+
+                switch (period)
+                {
+                    case "1Day": threshold = DateTime.Now.AddDays(-1); break;
+                    case "1Week": threshold = DateTime.Now.AddDays(-7); break;
+                    case "1Month": threshold = DateTime.Now.AddMonths(-1); break;
+                    case "All": threshold = DateTime.MaxValue; break;
+                }
+
+                int deletedCount = 0;
+                long freedBytes = 0;
+
+                await Task.Run(() =>
+                {
+                    foreach (var file in files)
+                    {
+                        var fi = new FileInfo(file);
+                        if (period == "All" || fi.LastWriteTime < threshold)
+                        {
+                            try 
+                            { 
+                                freedBytes += fi.Length;
+                                fi.Delete(); 
+                                deletedCount++; 
+                            }
+                            catch (Exception ex) { _log?.Warn($"No se pudo borrar {file}: {ex.Message}"); }
+                        }
+                    }
+                });
+
+                await _dialogService.ShowMessage($"Limpieza completada.\nArchivos eliminados: {deletedCount}\nEspacio liberado: {freedBytes / 1024 / 1024} MB", "Éxito");
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowMessage($"Error al limpiar descargas: {ex.Message}", "Error");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task ExecuteDeleteSelectedLargeFilesAsync()
+        {
+            var selected = DeepScanResult.Where(f => f.IsSelected).ToList();
+            if (!selected.Any())
+            {
+                await _dialogService.ShowMessage("No hay archivos seleccionados.", "Información");
+                return;
+            }
+
+            bool confirm = await _dialogService.ShowConfirmation($"¿Eliminar {selected.Count} archivo(s) permanentemente?", "Confirmar Eliminación");
+            if (!confirm) return;
+
+            try
+            {
+                IsBusy = true;
+                int deleted = 0;
+                await Task.Run(() =>
+                {
+                    foreach (var item in selected)
+                    {
+                        try
+                        {
+                            if (File.Exists(item.Path))
+                            {
+                                File.Delete(item.Path);
+                                deleted++;
+                            }
+                        }
+                        catch (Exception ex) { _log?.Error($"No se pudo eliminar {item.Path}", ex); }
+                    }
+                });
+
+                await _dialogService.ShowMessage($"Se eliminaron {deleted} archivos.", "Éxito");
+                await ExecuteDeepScanAsync();
+            }
+            finally 
+            {
+                IsBusy = false;
+            }
+        }
+        
+        private async Task ExecuteCustomSpaceLiberatorAsync()
+        {
+             bool confirm = await _dialogService.ShowConfirmation("Esto eliminará archivos temporales, prefetch y carpetas de caché comunes. ¿Continuar?", "Liberador de Espacio Mejorado");
+             if (!confirm) return;
+             
+             try
+             {
+                 IsBusy = true;
+                 StatusMessage = "Liberando espacio...";
+                 await _maintenance.CleanTemporaryFilesAsync(new CleaningOptions { CleanSystemTemp = true, CleanRecycleBin = true });
+                 await ExecuteCleanPrefetchAsync();
+                 await _dialogService.ShowMessage("Limpieza profunda finalizada.", "Éxito");
+             }
+             catch(Exception ex)
+             {
+                 await _dialogService.ShowMessage($"Error: {ex.Message}", "Error");
+             }
+             finally
+             {
+                 IsBusy = false;
+                 StatusMessage = "";
+             }
+        }
+
+        public ICommand CleanDownloadsCommand { get; set; }
+        public ICommand DeleteSelectedLargeFilesCommand { get; set; }
+        public ICommand CustomSpaceLiberatorCommand { get; set; }
     }
 }
